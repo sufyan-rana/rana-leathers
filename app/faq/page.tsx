@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
+import Link from "next/link";  // 👈 Add this import
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 const faqs = [
@@ -26,7 +27,7 @@ const faqs = [
   },
   {
     question: "Are your products handmade?",
-    answer: "Yes! Since 1985, all RANA LEATHER'S products are handcrafted by master artisans in Sialkot, Pakistan."
+    answer: "Yes! Since 2010, all RANA LEATHER'S products are handcrafted by master artisans in Sialkot, Pakistan."
   },
   {
     question: "Do you offer custom orders?",

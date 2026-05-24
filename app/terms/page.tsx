@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 export default function TermsPage() {
   return (
@@ -50,3 +50,4 @@ export default function TermsPage() {
     </div>
   );
 }
+

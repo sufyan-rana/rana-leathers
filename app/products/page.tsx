@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from "react";
 import Link from "next/link";
@@ -69,12 +69,12 @@ const categories = ["all", "jackets", "bags", "belts", "wallets", "shoes"];
 
 const getCategoryIcon = (category: string) => {
   switch(category) {
-    case "jackets": return "🧥";
-    case "bags": return "👜";
-    case "belts": return "👔";
-    case "wallets": return "👛";
-    case "shoes": return "👞";
-    default: return "👜";
+    case "jackets": return "ðŸ§¥";
+    case "bags": return "ðŸ‘œ";
+    case "belts": return "ðŸ‘”";
+    case "wallets": return "ðŸ‘›";
+    case "shoes": return "ðŸ‘ž";
+    default: return "ðŸ‘œ";
   }
 };
 
@@ -146,7 +146,7 @@ export default function ProductsPage() {
                   )}
                 </div>
                 <div className="flex items-center justify-between mt-3">
-                  <div className="flex text-yellow-500">{"★".repeat(Math.floor(product.rating))}{"☆".repeat(5-Math.floor(product.rating))}</div>
+                  <div className="flex text-yellow-500">{"â˜…".repeat(Math.floor(product.rating))}{"â˜†".repeat(5-Math.floor(product.rating))}</div>
                   <button className="bg-[#8B3A1A] text-white p-2 rounded-full hover:bg-[#1A0F0A] transition">
                     <ShoppingBag size={18} />
                   </button>

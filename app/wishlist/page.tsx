@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+
 
 import { useState } from "react";
 import Link from "next/link";
@@ -87,8 +88,8 @@ export default function WishlistPage() {
               </Link>
               <div className="flex items-center mt-2 mb-2">
                 <div className="flex text-yellow-500">
-                  {"★".repeat(Math.floor(item.rating))}
-                  {"☆".repeat(5 - Math.floor(item.rating))}
+                  {"â˜…".repeat(Math.floor(item.rating))}
+                  {"â˜†".repeat(5 - Math.floor(item.rating))}
                 </div>
                 <span className="text-xs text-gray-500 ml-2">({item.rating})</span>
               </div>
@@ -117,7 +118,7 @@ export default function WishlistPage() {
       
       <div className="text-center mt-8">
         <Link href="/products" className="text-[#8B3A1A] hover:text-[#D4AF37] transition">
-          Continue Shopping →
+          Continue Shopping â†’
         </Link>
       </div>
     </div>
