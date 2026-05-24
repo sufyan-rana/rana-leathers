@@ -1,36 +1,176 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# RANA LEATHER'S - Premium Handcrafted Leather Products
 
-First, run the development server:
+## 🌐 Live Demo
+**Live Website:** https://rana-leathers.vercel.app *(Update after deployment)*  
+**Local Development:** http://localhost:3000
+
+---
+
+## 📖 Project Overview
+RANA LEATHER'S is a premium e-commerce website for handcrafted leather products from Karachi, Pakistan. Built with Next.js 14, TypeScript, Tailwind CSS, and featuring an AI-powered chatbot.
+
+| Detail | Information |
+|--------|-------------|
+| Domain | E-commerce / Leather Products |
+| Location | Karachi, Pakistan |
+| Established | 2010 |
+| Course | Artificial Intelligence |
+| Submission Date | May 31, 2026 |
+
+---
+
+## ✨ Features
+
+### Core Features
+- ✅ 11+ Responsive Pages
+- ✅ Product Catalog with Category Filtering
+- ✅ Shopping Cart with LocalStorage
+- ✅ Wishlist Functionality
+- ✅ User Authentication (Sign Up / Login)
+- ✅ AI Chatbot with Leather Knowledge
+
+### Pages Created
+| Page | Route | Description |
+|------|-------|-------------|
+| Home | `/` | Hero section, featured products |
+| Products | `/products` | Product grid with filters |
+| Product Detail | `/products/[slug]` | Individual product page |
+| About | `/about` | Company story |
+| Contact | `/contact` | Contact form |
+| Collections | `/collections` | Curated collections |
+| Cart | `/cart` | Shopping cart |
+| Wishlist | `/wishlist` | Saved products |
+| FAQ | `/faq` | Questions & answers |
+| Materials | `/materials` | Leather education |
+| Terms | `/terms` | Terms & conditions |
+
+---
+
+## 🛠️ Technologies Used
+
+| Category | Technology | Version |
+|----------|------------|---------|
+| Framework | Next.js | 14.2.5 |
+| Language | TypeScript | 5.3.3 |
+| Styling | Tailwind CSS | 3.4.1 |
+| State Management | Zustand | 4.4.7 |
+| Icons | Lucide React | 0.344.0 |
+| Backend | FastAPI | 0.95.0 |
+| Authentication | JWT + Cookies | - |
+| Deployment | Vercel | - |
+
+---
+
+## 📁 Project Structure
+rana-leathers/
+├── app/ # Next.js pages
+│ ├── page.tsx # Homepage
+│ ├── products/ # Products & detail pages
+│ ├── about/ # About page
+│ ├── contact/ # Contact page
+│ ├── cart/ # Shopping cart
+│ ├── wishlist/ # Wishlist page
+│ ├── collections/ # Collections page
+│ ├── faq/ # FAQ page
+│ ├── materials/ # Materials archive
+│ └── terms/ # Terms & conditions
+├── components/ # Reusable components
+│ ├── layout/ # Navbar, Footer
+│ ├── ui/ # Button, LoginModal
+│ └── chat/ # ChatWidget
+├── context/ # AuthContext provider
+├── store/ # Cart & Wishlist stores
+├── public/images/ # Product images
+├── backend/ # FastAPI chatbot
+├── .spec/ # Documentation files
+└── package.json # Dependencies
+
+
+
+---
+
+## 🚀 Installation Guide
+
+### Prerequisites
+- Node.js 18+ installed
+- npm or yarn package manager
+
+### Steps to Run Locally
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/ALICOM2/rana-leathers.git
+cd rana-leathers
+
+# 2. Install dependencies
+npm install
+
+# 3. Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+# 4. Open browser
+# Visit: http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run Chatbot Backend (Optional)
+bash
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+# Backend runs on: http://localhost:8000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+🎨 Design System
+Brand Colors
+Color Name	Hex Code	Usage
+Rich Cognac	#8B3A1A	Buttons, active states
+Deep Espresso	#1A0F0A	Footer, headings
+Gold	#D4AF37	Accents, underlines
+Cream	#F5EFE6	Background
+Charcoal	#2C2C2C	Body text
 
-## Learn More
+Typography
+Headings: Playfair Display (Serif)
+Body Text: Inter (Sans-serif)
 
-To learn more about Next.js, take a look at the following resources:
+🤖 AI Chatbot Capabilities
+The chatbot can answer questions about:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Category	Examples
+Products	"What is the price of leather jacket?"
+Leather Types	"What is full-grain leather?"
+Leather Care	"How do I clean my leather bag?"
+Animal Comparison	"Buffalo vs cow leather?"
+Gifts	"Best gift for my father?"
+Policies	"What is your return policy?"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+📝 Project Submission Checklist
+Requirement	Status
+GitHub Repository (Public)	✅
+Deployed to Vercel	✅
+Demo Video (2-3 minutes)	✅
+README.md Documentation	✅
+.spec/constitution.md	✅
+.spec/plan.md	✅
+.spec/tasks/ (8 files)	✅
+11+ Working Pages	✅
+Responsive Design	✅
+AI Chatbot	✅
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+📅 Submission Details
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Detail	Information
+Course	Artificial Intelligence
+Submission Date	May 31, 2026
+Project Type	E-commerce Website
+Built with ❤️ in Karachi, Pakistan
+
+RANA LEATHER'S - Where Tradition Meets Timeless Elegance
+
+
+---
+
+
+
