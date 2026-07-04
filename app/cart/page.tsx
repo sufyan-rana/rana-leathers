@@ -1,26 +1,37 @@
-﻿'use client';
+﻿// app/cart/page.tsx
+'use client';
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { Trash2, ShoppingBag, Plus, Minus, ArrowLeft } from "lucide-react";
-import { useCartStore } from "@/store/cartStore";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Trash2, ShoppingBag, Plus, Minus, ArrowLeft, Loader2 } from 'lucide-react';
+import { useCartStore } from '@/store/cartStore';
+import Image from 'next/image';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, getTotalPrice } = useCartStore();
+  const { items, isLoading, fetchCart, removeItem, updateQuantity, clearCart, getTotalPrice } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    fetchCart();
+  }, [fetchCart]);
+
+  if (!mounted) {
+    return (
+      <div className="container-custom py-20 text-center">
+        <Loader2 size={40} className="animate-spin mx-auto text-[#D4AF37]" />
+      </div>
+    );
+  }
 
   const subtotal = getTotalPrice();
   const shipping = subtotal > 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
-  if (!mounted) {
+  if (isLoading && items.length === 0) {
     return (
       <div className="container-custom py-20 text-center">
-        <div className="animate-pulse">Loading cart...</div>
+        <Loader2 size={40} className="animate-spin mx-auto text-[#D4AF37]" />
       </div>
     );
   }
@@ -57,12 +68,11 @@ export default function CartPage() {
             </div>
 
             {items.map((item) => (
-              <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center">
-                {/* Product Info */}
+              <div key={item.product_id} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border-b items-center">
                 <div className="md:col-span-6 flex gap-4">
                   <div className="w-20 h-20 bg-gradient-to-br from-[#8B3A1A] to-[#D4AF37] rounded flex items-center justify-center overflow-hidden">
                     <img
-                      src={item.image || "/images/products/jacket.jpg"}
+                      src={item.image || '/images/products/jacket.jpg'}
                       alt={item.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -76,8 +86,12 @@ export default function CartPage() {
                         {item.name}
                       </h3>
                     </Link>
+                    <div className="flex flex-wrap gap-1 text-xs text-gray-500">
+                      {item.size && <span>Size: {item.size}</span>}
+                      {item.color && <span>Color: {item.color}</span>}
+                    </div>
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => removeItem(item.product_id)}
                       className="text-xs text-red-500 hover:text-red-700 mt-1 flex items-center gap-1"
                     >
                       <Trash2 size={12} /> Remove
@@ -85,25 +99,24 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Price */}
                 <div className="md:col-span-2 text-left md:text-center">
                   <span className="md:hidden text-gray-500 text-sm mr-2">Price:</span>
                   Rs. {item.price.toLocaleString()}
                 </div>
 
-                {/* Quantity */}
                 <div className="md:col-span-2">
                   <div className="flex items-center gap-2 md:justify-center">
                     <span className="md:hidden text-gray-500 text-sm mr-2">Qty:</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="w-7 h-7 border rounded flex items-center justify-center hover:bg-gray-100 transition"
+                      onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                      disabled={item.quantity <= 1}
+                      className="w-7 h-7 border rounded flex items-center justify-center hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Minus size={12} />
                     </button>
                     <span className="w-8 text-center">{item.quantity}</span>
                     <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                       className="w-7 h-7 border rounded flex items-center justify-center hover:bg-gray-100 transition"
                     >
                       <Plus size={12} />
@@ -111,7 +124,6 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* Total */}
                 <div className="md:col-span-2 text-left md:text-center font-semibold text-[#8B3A1A]">
                   <span className="md:hidden text-gray-500 text-sm mr-2">Total:</span>
                   Rs. {(item.price * item.quantity).toLocaleString()}
@@ -154,11 +166,14 @@ export default function CartPage() {
             </div>
           </div>
 
-          <button className="w-full bg-[#8B3A1A] text-white py-3 hover:bg-[#1A0F0A] transition mb-3">
+          <Link
+            href="/checkout"
+            className="w-full bg-[#8B3A1A] text-white py-3 hover:bg-[#1A0F0A] transition block text-center"
+          >
             Proceed to Checkout
-          </button>
+          </Link>
           
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-500 text-center mt-3">
             Free shipping on orders over Rs. 5,000
           </p>
         </div>

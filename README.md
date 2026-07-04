@@ -2,7 +2,7 @@
 # RANA LEATHER'S - Premium Handcrafted Leather Products
 
 ## 🌐 Live Demo
-**Live Website:** https://rana-leathers.vercel.app *(Update after deployment)*  
+**Live Website:** https://rana-leathers-mf7d.vercel.app/ 
 **Local Development:** http://localhost:3000
 
 ---

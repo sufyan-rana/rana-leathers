@@ -102,19 +102,19 @@ export default function ProductDetailPage() {
     notFound();
   }
 
-  const handleAddToCart = () => {
-    addItemToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: quantity,
-      image: product.image,
-      slug: product.slug,
-    });
-    
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  };
+// Fix the addToCart function
+const handleAddToCart = () => {
+  addItemToCart({
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    quantity: quantity,
+    image: product.image,
+    slug: product.slug,
+  });
+  setAddedToCart(true);
+  setTimeout(() => setAddedToCart(false), 2000);
+};
 
   return (
     <div className="container-custom py-12">

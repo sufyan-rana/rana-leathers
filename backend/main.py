@@ -1,14 +1,25 @@
-﻿import httpx
+﻿import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
+import httpx
 
-# Your Gemini API Key
-GEMINI_API_KEY = "AIzaSyDouub0TQ2X8qQBBaUlmhTtcNk9Rg1zXAs"
+# Load .env file from the same directory
+load_dotenv()
 
-print(f"✅ API Key loaded")
+# Get API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Debug - remove after testing
+print(f"Current directory: {os.getcwd()}")
+print(f".env file exists: {os.path.exists('.env')}")
+print(f"API Key loaded: {bool(GEMINI_API_KEY)}")
+if GEMINI_API_KEY:
+    print(f"API Key starts with: {GEMINI_API_KEY[:15]}...")
+
 
 app = FastAPI(title="RANA LEATHER'S Chatbot API")
 
