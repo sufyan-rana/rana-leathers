@@ -1,22 +1,17 @@
 // app/api/cart/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { query, getClient } from '@/lib/db';
+import { sql } from '@/lib/db';
 
-// Helper function to get user from request
 async function getUserFromRequest(request: NextRequest) {
   try {
     const token = request.cookies.get('auth-token')?.value;
     if (!token) return null;
-    
-    // For testing - return a mock user
-    // In production, verify JWT and get real user
     return { id: 'test-user-id', name: 'Test User' };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-// GET - Get cart items
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -24,24 +19,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await query(
-      `SELECT 
-        c.id,
-        c.quantity,
-        c.size,
-        c.color,
-        p.id as product_id,
-        p.name,
-        p.price,
-        p.image_url as image,
-        p.slug
+    const result = await sql`
+      SELECT 
+        c.id, c.quantity, c.size, c.color,
+        p.id as product_id, p.name, p.price, p.image_url as image, p.slug
       FROM cart_items c
       JOIN products p ON c.product_id = p.id
-      WHERE c.user_id = $1`,
-      [user.id]
-    );
+      WHERE c.user_id = ${user.id}
+    `;
     
-    return NextResponse.json({ items: result.rows });
+    return NextResponse.json({ items: result });
   } catch (error: any) {
     console.error('Cart GET error:', error);
     return NextResponse.json({ 
@@ -51,7 +38,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Add item to cart
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -67,29 +53,15 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if product exists
-    const productCheck = await query(
-      'SELECT id FROM products WHERE id = $1',
-      [productId]
-    );
-    
-    if (productCheck.rows.length === 0) {
-      return NextResponse.json({ 
-        error: 'Product not found' 
-      }, { status: 404 });
-    }
-
-    // Insert or update cart
-    await query(
-      `INSERT INTO cart_items (user_id, product_id, quantity, size, color)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (user_id, product_id) 
-       DO UPDATE SET 
-         quantity = cart_items.quantity + $3,
-         size = $4,
-         color = $5`,
-      [user.id, productId, quantity, size || null, color || null]
-    );
+    await sql`
+      INSERT INTO cart_items (user_id, product_id, quantity, size, color)
+      VALUES (${user.id}, ${productId}, ${quantity}, ${size || null}, ${color || null})
+      ON CONFLICT (user_id, product_id) 
+      DO UPDATE SET 
+        quantity = cart_items.quantity + ${quantity},
+        size = ${size || null},
+        color = ${color || null}
+    `;
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -101,7 +73,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT - Update quantity
 export async function PUT(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -118,15 +89,16 @@ export async function PUT(request: NextRequest) {
     }
 
     if (quantity <= 0) {
-      await query(
-        'DELETE FROM cart_items WHERE user_id = $1 AND product_id = $2',
-        [user.id, productId]
-      );
+      await sql`
+        DELETE FROM cart_items 
+        WHERE user_id = ${user.id} AND product_id = ${productId}
+      `;
     } else {
-      await query(
-        'UPDATE cart_items SET quantity = $1 WHERE user_id = $2 AND product_id = $3',
-        [quantity, user.id, productId]
-      );
+      await sql`
+        UPDATE cart_items 
+        SET quantity = ${quantity}
+        WHERE user_id = ${user.id} AND product_id = ${productId}
+      `;
     }
     
     return NextResponse.json({ success: true });
@@ -139,7 +111,6 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Remove item or clear cart
 export async function DELETE(request: NextRequest) {
   try {
     const user = await getUserFromRequest(request);
@@ -151,15 +122,15 @@ export async function DELETE(request: NextRequest) {
     const productId = searchParams.get('productId');
     
     if (productId) {
-      await query(
-        'DELETE FROM cart_items WHERE user_id = $1 AND product_id = $2',
-        [user.id, parseInt(productId)]
-      );
+      await sql`
+        DELETE FROM cart_items 
+        WHERE user_id = ${user.id} AND product_id = ${parseInt(productId)}
+      `;
     } else {
-      await query(
-        'DELETE FROM cart_items WHERE user_id = $1',
-        [user.id]
-      );
+      await sql`
+        DELETE FROM cart_items 
+        WHERE user_id = ${user.id}
+      `;
     }
     
     return NextResponse.json({ success: true });
