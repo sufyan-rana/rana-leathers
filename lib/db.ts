@@ -1,19 +1,28 @@
 // lib/db.ts
-import { sql } from '@vercel/postgres';
+import { Pool } from 'pg';
 
-// Export sql directly
-export { sql };
+// Create a connection pool
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+  ssl: {
+    rejectUnauthorized: false, // Required for Neon
+  },
+});
 
-// For backward compatibility
-export const query = sql;
-
-// For getClient compatibility
-export async function getClient() {
-  return {
-    query: async (text: string, params?: any[]) => {
-      const result = await sql`${text}`;
-      return { rows: result };
-    },
-    release: () => {}
-  };
+// Helper function to execute queries
+export async function query(text: string, params?: any[]) {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(text, params);
+    return result;
+  } finally {
+    client.release();
+  }
 }
+
+// Helper function to get a client for transactions
+export async function getClient() {
+  return await pool.connect();
+}
+
+export { pool };

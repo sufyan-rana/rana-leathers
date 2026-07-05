@@ -1,6 +1,6 @@
 // app/api/cart/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { getCartItems, addToCart, removeFromCart, updateCartQuantity } from '@/lib/db-utils';
 
 async function getUserFromRequest(request: NextRequest) {
   try {
@@ -19,16 +19,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await sql`
-      SELECT 
-        c.id, c.quantity, c.size, c.color,
-        p.id as product_id, p.name, p.price, p.image_url as image, p.slug
-      FROM cart_items c
-      JOIN products p ON c.product_id = p.id
-      WHERE c.user_id = ${user.id}
-    `;
-    
-    return NextResponse.json({ items: result });
+    const items = await getCartItems(user.id);
+    return NextResponse.json({ items });
   } catch (error: any) {
     console.error('Cart GET error:', error);
     return NextResponse.json({ 
@@ -53,15 +45,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    await sql`
-      INSERT INTO cart_items (user_id, product_id, quantity, size, color)
-      VALUES (${user.id}, ${productId}, ${quantity}, ${size || null}, ${color || null})
-      ON CONFLICT (user_id, product_id) 
-      DO UPDATE SET 
-        quantity = cart_items.quantity + ${quantity},
-        size = ${size || null},
-        color = ${color || null}
-    `;
+    await addToCart(user.id, productId, quantity, size, color);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -88,18 +72,7 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (quantity <= 0) {
-      await sql`
-        DELETE FROM cart_items 
-        WHERE user_id = ${user.id} AND product_id = ${productId}
-      `;
-    } else {
-      await sql`
-        UPDATE cart_items 
-        SET quantity = ${quantity}
-        WHERE user_id = ${user.id} AND product_id = ${productId}
-      `;
-    }
+    await updateCartQuantity(user.id, productId, quantity);
     
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -122,15 +95,10 @@ export async function DELETE(request: NextRequest) {
     const productId = searchParams.get('productId');
     
     if (productId) {
-      await sql`
-        DELETE FROM cart_items 
-        WHERE user_id = ${user.id} AND product_id = ${parseInt(productId)}
-      `;
+      await removeFromCart(user.id, parseInt(productId));
     } else {
-      await sql`
-        DELETE FROM cart_items 
-        WHERE user_id = ${user.id}
-      `;
+      // Clear all cart - handle in db-utils
+      await query('DELETE FROM cart_items WHERE user_id = $1', [user.id]);
     }
     
     return NextResponse.json({ success: true });

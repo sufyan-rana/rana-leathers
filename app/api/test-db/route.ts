@@ -1,6 +1,6 @@
 // app/api/test-db/route.ts
 import { NextResponse } from 'next/server';
-import { sql } from '@/lib/db';
+import { query } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -11,12 +11,12 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    const result = await sql`SELECT NOW() as current_time, 1 as connected`;
+    const result = await query('SELECT NOW() as current_time, 1 as connected');
     
     return NextResponse.json({ 
       success: true, 
       message: '✅ Database connected successfully!',
-      data: result[0]
+      data: result.rows[0]
     });
   } catch (error: any) {
     console.error('Database error:', error);
