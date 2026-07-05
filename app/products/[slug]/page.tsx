@@ -81,7 +81,7 @@ const products: Record<string, any> = {
     image: "/images/products/backpack.jpg",
     slug: "leather-backpack",
     description: "Handcrafted full-grain leather backpack with a vintage finish.",
-    features: ["Full-grain leather", "Adjustable shoulder straps", "Brass hardware", "Padded laptop sleeve (fits up to 15\")", "Front buckle closure"],
+    features: ["Full-grain leather", "Adjustable shoulder straps", "Brass hardware", "Padded laptop sleeve", "Front buckle closure"],
     sizes: ["One Size"],
     colors: ["Brown", "Black", "Tan"],
   }
@@ -91,30 +91,36 @@ export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
   const product = products[slug];
-  const addItemToCart = useCartStore((state) => state.addItem);
   
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
 
+  // Get the addItem function from the cart store
+  const addItemToCart = useCartStore((state) => state.addItem);
+
   if (!product) {
     notFound();
   }
 
-// Fix the addToCart function
-const handleAddToCart = () => {
-  addItemToCart({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    quantity: quantity,
-    image: product.image,
-    slug: product.slug,
-  });
-  setAddedToCart(true);
-  setTimeout(() => setAddedToCart(false), 2000);
-};
+  const handleAddToCart = () => {
+    // Add item to cart using Zustand store
+    addItemToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.image,
+      slug: product.slug,
+      size: selectedSize,
+      color: selectedColor,
+    });
+    
+    // Show feedback to user
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
 
   return (
     <div className="container-custom py-12">
@@ -233,7 +239,7 @@ const handleAddToCart = () => {
               }`}
             >
               <ShoppingBag size={20} /> 
-              {addedToCart ? "Added to Cart!" : "Add to Cart"}
+              {addedToCart ? "Added to Cart! ✓" : "Add to Cart"}
             </button>
             <button className="p-3 border rounded-lg hover:bg-gray-50 transition">
               <Heart size={20} className="text-[#8B3A1A]" />
