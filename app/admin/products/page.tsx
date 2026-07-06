@@ -12,6 +12,7 @@ interface Product {
   category: string;
   in_stock: boolean;
   image_url: string;
+  slug: string;
 }
 
 export default function AdminProducts() {
