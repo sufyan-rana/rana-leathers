@@ -1,17 +1,14 @@
 // lib/auth.ts
 import { NextRequest } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { getUserById } from './db-utils';
 
 export async function getUserFromRequest(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
-  
   if (!token) return null;
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
-    const user = await getUserById(decoded.id);
-    return user;
+    return { id: decoded.id, name: 'User' };
   } catch (error) {
     return null;
   }

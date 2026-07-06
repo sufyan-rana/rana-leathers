@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ShoppingBag, Heart, User, LogOut } from "lucide-react";
+import { Menu, X, ShoppingBag, Heart, User, LogOut, Shield } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import LoginModal from '@/components/ui/LoginModal';
 
@@ -45,8 +45,12 @@ const COLORS = {
   activeUnderline: "#D4AF37",    // Active page underline color
 };
 
-// NAVIGATION LINKS
-const navigation = [
+// ============================================================
+// NAVIGATION LINKS - Add or remove menu items here
+// ============================================================
+
+// Base navigation for all users
+const baseNavigation = [
   { name: "Home", href: "/" },
   { name: "Products", href: "/products" },
   { name: "Materials", href: "/materials" },
@@ -54,6 +58,9 @@ const navigation = [
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
+
+// Admin navigation (will be conditionally added)
+const adminLink = { name: "Admin", href: "/admin", icon: Shield };
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -63,6 +70,14 @@ export default function Navbar() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const pathname = usePathname();
   const [cartCount, setCartCount] = useState(0);
+
+  // Build navigation dynamically based on user role
+  const navigation = [...baseNavigation];
+  
+  // Check if user is admin (email matches admin email)
+  if (user?.email === 'admin@ranaleathers.com') {
+    navigation.push(adminLink);
+  }
 
   // Detect scroll to change navbar style
   useEffect(() => {
