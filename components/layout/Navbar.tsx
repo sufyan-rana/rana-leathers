@@ -75,7 +75,7 @@ export default function Navbar() {
   const navigation = [...baseNavigation];
   
   // Check if user is admin (email matches admin email)
-  if (user?.email === 'admin@ranaleathers.com') {
+  if (user?.email === 'ranaleathers58@gamil.com') {
     navigation.push(adminLink);
   }
 

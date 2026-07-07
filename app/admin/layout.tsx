@@ -30,8 +30,8 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   // Check if user is admin (you can set this in your database)
-  // For now, we'll check if email is admin@ranaleathers.com
-  const isAdmin = user?.email === 'admin@ranaleathers.com';
+  // For now, we'll check if email is ranaleathers58@gamil.com
+  const isAdmin = user?.email === 'ranaleathers58@gmail.com';
 
   if (!user || !isAdmin) {
     return (
