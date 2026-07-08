@@ -74,8 +74,9 @@ export default function Navbar() {
   // Build navigation dynamically based on user role
   const navigation = [...baseNavigation];
   
-  // Check if user is admin (either by email or role)
-if (user?.email === 'ranaleathers58@gmail.com' || user?.role === 'admin') {
+  // ✅ FIXED: Check if user is admin (by email only)
+  // The 'role' property doesn't exist on the user object yet
+  if (user?.email === 'ranaleathers58@gmail.com') {
     navigation.push(adminLink);
   }
 

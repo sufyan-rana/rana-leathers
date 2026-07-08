@@ -29,7 +29,8 @@ export default function AdminLayout({
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
-  const isAdmin = user?.email === 'ranaleathers58@gmail.com' || user?.role === 'admin';
+  // Check if user is admin by email only (since we haven't added role to database yet)
+const isAdmin = user?.email === 'ranaleathers58@gmail.com';
 
   if (!user || !isAdmin) {
     return (
