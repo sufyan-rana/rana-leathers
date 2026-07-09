@@ -71,28 +71,36 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   };
 
   // Keyboard navigation: Up/Down arrows only (No Enter key)
-  const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'password') => {
-    // Prevent Enter key from submitting
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      return;
-    }
+const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'password') => {
+  // Prevent Enter key from submitting
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    return;
+  }
 
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      
-      const fields = isLogin ? ['email', 'password'] : ['name', 'email', 'password'];
-      const currentIndex = fields.indexOf(field);
-      
-      if (e.key === 'ArrowDown') {
-        const nextIndex = (currentIndex + 1) % fields.length;
-        moveFocus(fields[nextIndex]);
-      } else if (e.key === 'ArrowUp') {
-        const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
-        moveFocus(fields[prevIndex]);
-      }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    
+    // Define the fields with proper type
+    const fields: ('name' | 'email' | 'password')[] = isLogin 
+      ? ['email', 'password'] 
+      : ['name', 'email', 'password'];
+    
+    const currentIndex = fields.indexOf(field);
+    
+    if (currentIndex === -1) return;
+    
+    if (e.key === 'ArrowDown') {
+      const nextIndex = (currentIndex + 1) % fields.length;
+      const nextField = fields[nextIndex];
+      moveFocus(nextField);
+    } else if (e.key === 'ArrowUp') {
+      const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+      const prevField = fields[prevIndex];
+      moveFocus(prevField);
     }
-  };
+  }
+};
 
   const moveFocus = (field: 'name' | 'email' | 'password') => {
     setFocusedField(field);
