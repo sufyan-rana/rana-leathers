@@ -11,7 +11,7 @@ import {
   Users, 
   Settings,
   LogOut,
-  key 
+  Key 
 } from 'lucide-react';
 
 const adminNav = [
