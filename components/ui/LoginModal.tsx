@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff, ArrowUp, ArrowDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface LoginModalProps {
@@ -15,13 +15,15 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<'name' | 'email' | 'password'>('email');
   
   // Refs for keyboard navigation
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
   
   const { login, register } = useAuth();
 
@@ -31,10 +33,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
       setTimeout(() => {
         if (isLogin) {
           emailInputRef.current?.focus();
+          setFocusedField('email');
         } else {
           nameInputRef.current?.focus();
+          setFocusedField('name');
         }
-      }, 100);
+      }, 300);
     }
   }, [isOpen, isLogin]);
 
@@ -66,109 +70,195 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setLoading(false);
   };
 
-  // Handle Enter key for navigation
-  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
+  // Keyboard navigation: Up/Down arrows only (No Enter key)
+  const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'password') => {
+    // Prevent Enter key from submitting
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (field === 'name' && passwordInputRef.current) {
-        passwordInputRef.current.focus();
-      } else if (field === 'email' && passwordInputRef.current) {
-        passwordInputRef.current.focus();
-      } else if (field === 'password') {
-        handleSubmit(e);
+      return;
+    }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      
+      const fields = isLogin ? ['email', 'password'] : ['name', 'email', 'password'];
+      const currentIndex = fields.indexOf(field);
+      
+      if (e.key === 'ArrowDown') {
+        const nextIndex = (currentIndex + 1) % fields.length;
+        moveFocus(fields[nextIndex]);
+      } else if (e.key === 'ArrowUp') {
+        const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+        moveFocus(fields[prevIndex]);
       }
     }
   };
 
+  const moveFocus = (field: 'name' | 'email' | 'password') => {
+    setFocusedField(field);
+    if (field === 'name') {
+      nameInputRef.current?.focus();
+    } else if (field === 'email') {
+      emailInputRef.current?.focus();
+    } else if (field === 'password') {
+      passwordInputRef.current?.focus();
+    }
+  };
+
+  // Get field label with arrow indicator
+  const getFieldLabel = (field: 'name' | 'email' | 'password', label: string) => {
+    const isFocused = focusedField === field;
+    return (
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-medium text-[#1A0F0A]">
+          {label}
+        </label>
+        {isFocused && (
+          <span className="text-xs text-[#D4AF37] flex items-center gap-1">
+            <ArrowUp size={12} />
+            <ArrowDown size={12} />
+            <span className="text-gray-400 ml-1">navigate</span>
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Animated Backdrop */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-[#1A0F0A]/80 via-[#8B3A1A]/60 to-[#D4AF37]/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
       
-      {/* Modal */}
-      <div className="relative bg-[#F5EFE6] w-full max-w-md p-8 rounded-lg shadow-2xl mx-4">
+      {/* Animated Modal */}
+      <div className="relative bg-gradient-to-br from-[#F5EFE6] to-[#E8DCD0] w-full max-w-md p-8 rounded-2xl shadow-2xl animate-fadeInUp border border-[#D4AF37]/20">
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-[#1A0F0A] transition"
+          className="absolute top-4 right-4 text-gray-500 hover:text-[#1A0F0A] transition-all duration-300 hover:rotate-90"
         >
           <X size={20} />
         </button>
 
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-serif text-[#1A0F0A] mb-2">
+        {/* Header with Animation */}
+        <div className="text-center mb-8 animate-slideDown">
+          <div className="w-16 h-1 bg-gradient-to-r from-[#D4AF37] to-[#8B3A1A] mx-auto mb-4 rounded-full" />
+          <h2 className="text-3xl font-serif font-light text-[#1A0F0A] mb-2">
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <div className="w-12 h-px bg-[#D4AF37] mx-auto" />
+          <p className="text-sm text-gray-500 font-light">
+            {isLogin ? 'Sign in to access your account' : 'Join the RANA LEATHER\'S family'}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
-            <div>
-              <label className="block text-sm text-[#1A0F0A] mb-1">Full Name</label>
-              <input
-                ref={nameInputRef}
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, 'name')}
-                className="w-full px-4 py-2 border border-gray-300 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition bg-white rounded"
-                required
-                placeholder="Enter your name"
-              />
+            <div className="animate-fadeIn" style={{ animationDelay: '0.1s' }}>
+              {getFieldLabel('name', 'Full Name')}
+              <div className="relative mt-1">
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, 'name')}
+                  onFocus={() => setFocusedField('name')}
+                  className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border-2 rounded-xl focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all duration-300 text-[#1A0F0A] placeholder:text-gray-400"
+                  required
+                  placeholder="Enter your full name"
+                />
+              </div>
             </div>
           )}
 
-          <div>
-            <label className="block text-sm text-[#1A0F0A] mb-1">Email</label>
-            <input
-              ref={emailInputRef}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, 'email')}
-              className="w-full px-4 py-2 border border-gray-300 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition bg-white rounded"
-              required
-              placeholder="your@email.com"
-            />
+          <div className="animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+            {getFieldLabel('email', 'Email Address')}
+            <div className="relative mt-1">
+              <input
+                ref={emailInputRef}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, 'email')}
+                onFocus={() => setFocusedField('email')}
+                className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border-2 rounded-xl focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all duration-300 text-[#1A0F0A] placeholder:text-gray-400"
+                required
+                placeholder="your@email.com"
+              />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm text-[#1A0F0A] mb-1">Password</label>
-            <input
-              ref={passwordInputRef}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, 'password')}
-              className="w-full px-4 py-2 border border-gray-300 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition bg-white rounded"
-              required
-              placeholder="••••••••"
-            />
+          <div className="animate-fadeIn" style={{ animationDelay: '0.3s' }}>
+            {getFieldLabel('password', 'Password')}
+            <div className="relative mt-1">
+              <input
+                ref={passwordInputRef}
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, 'password')}
+                onFocus={() => setFocusedField('password')}
+                className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border-2 rounded-xl focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all duration-300 text-[#1A0F0A] placeholder:text-gray-400 pr-12"
+                required
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#8B3A1A] transition-colors duration-300"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
 
           {error && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
+            <div className="animate-shake p-3 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#8B3A1A] hover:bg-[#1A0F0A] text-white py-2 transition disabled:opacity-50 rounded"
+            className="w-full bg-gradient-to-r from-[#8B3A1A] to-[#1A0F0A] hover:from-[#6B2A10] hover:to-[#1A0F0A] text-white py-3 rounded-xl font-semibold transition-all duration-500 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-[#8B3A1A]/30 relative overflow-hidden group mt-2"
           >
-            {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
+            <span className="relative z-10">
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Please wait...
+                </span>
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
+            </span>
           </button>
         </form>
 
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 animate-fadeIn" style={{ animationDelay: '0.4s' }}>
           <button
             onClick={() => {
               setIsLogin(!isLogin);
               setError('');
+              setFocusedField(isLogin ? 'name' : 'email');
             }}
-            className="text-sm text-[#8B3A1A] hover:text-[#D4AF37] transition"
+            className="text-sm text-[#8B3A1A] hover:text-[#D4AF37] transition-colors duration-300 font-medium"
           >
             {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
           </button>
+        </div>
+
+        {/* Keyboard navigation hint */}
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-400">
+            Use <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">↑</kbd> <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">↓</kbd> to navigate
+          </p>
         </div>
       </div>
     </div>
