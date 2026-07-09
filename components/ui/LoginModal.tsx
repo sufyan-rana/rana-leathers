@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -18,7 +18,25 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Refs for keyboard navigation
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  
   const { login, register } = useAuth();
+
+  // Focus on email input when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        if (isLogin) {
+          emailInputRef.current?.focus();
+        } else {
+          nameInputRef.current?.focus();
+        }
+      }, 100);
+    }
+  }, [isOpen, isLogin]);
 
   if (!isOpen) return null;
 
@@ -48,6 +66,20 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     setLoading(false);
   };
 
+  // Handle Enter key for navigation
+  const handleKeyDown = (e: React.KeyboardEvent, field: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (field === 'name' && passwordInputRef.current) {
+        passwordInputRef.current.focus();
+      } else if (field === 'email' && passwordInputRef.current) {
+        passwordInputRef.current.focus();
+      } else if (field === 'password') {
+        handleSubmit(e);
+      }
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -74,9 +106,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
             <div>
               <label className="block text-sm text-[#1A0F0A] mb-1">Full Name</label>
               <input
+                ref={nameInputRef}
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, 'name')}
                 className="w-full px-4 py-2 border border-gray-300 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition bg-white rounded"
                 required
                 placeholder="Enter your name"
@@ -87,9 +121,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
           <div>
             <label className="block text-sm text-[#1A0F0A] mb-1">Email</label>
             <input
+              ref={emailInputRef}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'email')}
               className="w-full px-4 py-2 border border-gray-300 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition bg-white rounded"
               required
               placeholder="your@email.com"
@@ -99,9 +135,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
           <div>
             <label className="block text-sm text-[#1A0F0A] mb-1">Password</label>
             <input
+              ref={passwordInputRef}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, 'password')}
               className="w-full px-4 py-2 border border-gray-300 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37] outline-none transition bg-white rounded"
               required
               placeholder="••••••••"
