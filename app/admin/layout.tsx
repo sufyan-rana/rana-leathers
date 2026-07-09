@@ -10,7 +10,8 @@ import {
   ShoppingCart, 
   Users, 
   Settings,
-  LogOut 
+  LogOut,
+  key 
 } from 'lucide-react';
 
 const adminNav = [
@@ -18,6 +19,7 @@ const adminNav = [
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Change Password', href: '/admin/password', icon: Key },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
