@@ -44,19 +44,34 @@ export default function CheckoutPage() {
 
   const [selectedPayment, setSelectedPayment] = useState('easypaisa');
 
-  // Refs for focus management
-  const fieldRefs = {
-    fullName: useRef<HTMLInputElement>(null),
-    email: useRef<HTMLInputElement>(null),
-    phone: useRef<HTMLInputElement>(null),
-    city: useRef<HTMLInputElement>(null),
-    address: useRef<HTMLInputElement>(null),
-    notes: useRef<HTMLInputElement>(null),
-    nextButton: useRef<HTMLButtonElement>(null),
-  };
-
-  const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Refs for focus management - properly typed
+  const fullNameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const cityRef = useRef<HTMLInputElement>(null);
+  const addressRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLInputElement>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
   const placeOrderRef = useRef<HTMLButtonElement>(null);
+  const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Helper function to focus inputs
+  const focusField = (fieldName: string) => {
+    const refs: Record<string, React.RefObject<HTMLInputElement | HTMLButtonElement> | null> = {
+      fullName: fullNameRef,
+      email: emailRef,
+      phone: phoneRef,
+      city: cityRef,
+      address: addressRef,
+      notes: notesRef,
+      nextButton: nextButtonRef,
+    };
+    
+    const ref = refs[fieldName];
+    if (ref && 'current' in ref) {
+      ref.current?.focus();
+    }
+  };
 
   useEffect(() => {
     if (!user) router.push('/login');
@@ -64,9 +79,8 @@ export default function CheckoutPage() {
   }, [user, items, router]);
 
   useEffect(() => {
-    // Focus first field on mount
     if (step === 1) {
-      setTimeout(() => fieldRefs.fullName.current?.focus(), 100);
+      setTimeout(() => fullNameRef.current?.focus(), 100);
     }
   }, [step]);
 
@@ -81,11 +95,10 @@ export default function CheckoutPage() {
     { id: 'cod', name: 'Cash on Delivery', icon: <CreditCard className="text-purple-600" size={24} />, details: ['Pay at delivery', 'Nationwide'] },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Keyboard navigation for Step 1 fields
   const handleStep1KeyDown = (e: React.KeyboardEvent, fieldName: string) => {
     const fields = ['fullName', 'email', 'phone', 'city', 'address', 'notes'];
     const currentIndex = fields.indexOf(fieldName);
@@ -93,12 +106,12 @@ export default function CheckoutPage() {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (currentIndex === fields.length - 1) {
-        // Last field -> move to Next button
-        fieldRefs.nextButton.current?.focus();
+        nextButtonRef.current?.focus();
       } else {
         const nextField = fields[currentIndex + 1];
         setFocusedField(nextField);
-        fieldRefs[nextField as keyof typeof fieldRefs].current?.focus();
+        const refs = [fullNameRef, emailRef, phoneRef, cityRef, addressRef, notesRef];
+        refs[currentIndex + 1]?.current?.focus();
       }
     }
 
@@ -107,7 +120,8 @@ export default function CheckoutPage() {
       if (currentIndex < fields.length - 1) {
         const nextField = fields[currentIndex + 1];
         setFocusedField(nextField);
-        fieldRefs[nextField as keyof typeof fieldRefs].current?.focus();
+        const refs = [fullNameRef, emailRef, phoneRef, cityRef, addressRef, notesRef];
+        refs[currentIndex + 1]?.current?.focus();
       }
     }
 
@@ -116,19 +130,18 @@ export default function CheckoutPage() {
       if (currentIndex > 0) {
         const prevField = fields[currentIndex - 1];
         setFocusedField(prevField);
-        fieldRefs[prevField as keyof typeof fieldRefs].current?.focus();
+        const refs = [fullNameRef, emailRef, phoneRef, cityRef, addressRef, notesRef];
+        refs[currentIndex - 1]?.current?.focus();
       }
     }
   };
 
-  // Keyboard navigation for Step 2 (Payment Methods)
   const handlePaymentKeyDown = (e: React.KeyboardEvent, index: number) => {
     const totalMethods = paymentMethods.length;
 
     if (e.key === 'Enter') {
       e.preventDefault();
       setSelectedPayment(paymentMethods[index].id);
-      // Move to Place Order button
       setTimeout(() => placeOrderRef.current?.focus(), 50);
     }
 
@@ -143,19 +156,34 @@ export default function CheckoutPage() {
       const prevIndex = (index - 1 + totalMethods) % totalMethods;
       paymentRefs.current[prevIndex]?.focus();
     }
-
-    if (e.key === 'Tab' && !e.shiftKey && index === totalMethods - 1) {
-      // Move to Place Order button
-      setTimeout(() => placeOrderRef.current?.focus(), 50);
-    }
   };
 
   const validateStep1 = () => {
-    if (!formData.fullName) { alert('Please enter your full name'); fieldRefs.fullName.current?.focus(); return false; }
-    if (!formData.email) { alert('Please enter your email'); fieldRefs.email.current?.focus(); return false; }
-    if (!formData.phone) { alert('Please enter your phone number'); fieldRefs.phone.current?.focus(); return false; }
-    if (!formData.address) { alert('Please enter your address'); fieldRefs.address.current?.focus(); return false; }
-    if (!formData.city) { alert('Please enter your city'); fieldRefs.city.current?.focus(); return false; }
+    if (!formData.fullName?.trim()) {
+      alert('Please enter your full name');
+      fullNameRef.current?.focus();
+      return false;
+    }
+    if (!formData.email?.trim()) {
+      alert('Please enter your email');
+      emailRef.current?.focus();
+      return false;
+    }
+    if (!formData.phone?.trim()) {
+      alert('Please enter your phone number');
+      phoneRef.current?.focus();
+      return false;
+    }
+    if (!formData.address?.trim()) {
+      alert('Please enter your address');
+      addressRef.current?.focus();
+      return false;
+    }
+    if (!formData.city?.trim()) {
+      alert('Please enter your city');
+      cityRef.current?.focus();
+      return false;
+    }
     return true;
   };
 
@@ -168,26 +196,48 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (!formData.fullName?.trim() || !formData.email?.trim() || !formData.phone?.trim() || !formData.address?.trim() || !formData.city?.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
     setLoading(true);
     try {
       const orderItems = items.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
+        id: Number(item.id) || 0,
+        name: item.name || 'Unknown Product',
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
         size: item.size || null,
         color: item.color || null,
       }));
+
+      if (orderItems.length === 0) {
+        alert('Your cart is empty.');
+        setLoading(false);
+        return;
+      }
+
+      const subtotal = getTotalPrice();
+      const shipping = subtotal > 5000 ? 0 : 500;
+      const total = subtotal + shipping;
 
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: orderItems,
-          subtotal,
-          shipping,
-          total,
-          customer: formData,
+          subtotal: Number(subtotal),
+          shipping: Number(shipping),
+          total: Number(total),
+          customer: {
+            fullName: formData.fullName.trim(),
+            email: formData.email.trim(),
+            phone: formData.phone.trim(),
+            address: formData.address.trim(),
+            city: formData.city.trim(),
+            notes: formData.notes?.trim() || '',
+          },
           paymentMethod: selectedPayment,
         }),
       });
@@ -195,13 +245,15 @@ export default function CheckoutPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setOrderNumber(data.orderNumber);
+        setOrderNumber(data.orderNumber || `ORD-${Date.now()}`);
         setOrderComplete(true);
         clearCart();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else {
         alert(data.error || 'Failed to place order. Please try again.');
       }
     } catch (error) {
+      console.error('Order error:', error);
       alert('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -259,7 +311,7 @@ export default function CheckoutPage() {
 
           {/* Step 1: Details */}
           {step === 1 && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-serif text-[#1A0F0A]">Shipping Information</h2>
                 <div className="text-xs text-gray-400 flex items-center gap-2">
@@ -268,22 +320,22 @@ export default function CheckoutPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { name: 'fullName', label: 'Full Name *', type: 'text', placeholder: 'Your full name' },
-                  { name: 'email', label: 'Email *', type: 'email', placeholder: 'your@email.com' },
-                  { name: 'phone', label: 'Phone *', type: 'tel', placeholder: '03XX-XXXXXXX' },
-                  { name: 'city', label: 'City *', type: 'text', placeholder: 'Your city' },
+                  { name: 'fullName', label: 'Full Name *', type: 'text', placeholder: 'Your full name', ref: fullNameRef },
+                  { name: 'email', label: 'Email *', type: 'email', placeholder: 'your@email.com', ref: emailRef },
+                  { name: 'phone', label: 'Phone *', type: 'tel', placeholder: '03XX-XXXXXXX', ref: phoneRef },
+                  { name: 'city', label: 'City *', type: 'text', placeholder: 'Your city', ref: cityRef },
                 ].map((field) => (
-                  <div key={field.name} className={field.name === 'fullName' || field.name === 'email' ? 'md:col-span-1' : 'md:col-span-1'}>
+                  <div key={field.name} className="md:col-span-1">
                     <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
                     <input
-                      ref={fieldRefs[field.name as keyof typeof fieldRefs]}
+                      ref={field.ref}
                       type={field.type}
                       name={field.name}
                       value={formData[field.name as keyof typeof formData] as string}
                       onChange={handleInputChange}
                       onKeyDown={(e) => handleStep1KeyDown(e, field.name)}
                       onFocus={() => setFocusedField(field.name)}
-                      className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                      className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition ${
                         focusedField === field.name
                           ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md'
                           : 'border-gray-200 hover:border-[#D4AF37]/50'
@@ -296,14 +348,14 @@ export default function CheckoutPage() {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
                   <input
-                    ref={fieldRefs.address}
+                    ref={addressRef}
                     type="text"
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
                     onKeyDown={(e) => handleStep1KeyDown(e, 'address')}
                     onFocus={() => setFocusedField('address')}
-                    className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition ${
                       focusedField === 'address'
                         ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md'
                         : 'border-gray-200 hover:border-[#D4AF37]/50'
@@ -315,14 +367,14 @@ export default function CheckoutPage() {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
                   <input
-                    ref={fieldRefs.notes}
+                    ref={notesRef}
                     type="text"
                     name="notes"
                     value={formData.notes || ''}
                     onChange={handleInputChange}
                     onKeyDown={(e) => handleStep1KeyDown(e, 'notes')}
                     onFocus={() => setFocusedField('notes')}
-                    className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition ${
                       focusedField === 'notes'
                         ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md'
                         : 'border-gray-200 hover:border-[#D4AF37]/50'
@@ -332,7 +384,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
               <button
-                ref={fieldRefs.nextButton}
+                ref={nextButtonRef}
                 onClick={handleNextStep}
                 className="mt-6 w-full md:w-auto bg-[#8B3A1A] hover:bg-[#1A0F0A] text-white px-8 py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none"
               >
@@ -343,7 +395,7 @@ export default function CheckoutPage() {
 
           {/* Step 2: Payment */}
           {step === 2 && (
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-serif text-[#1A0F0A]">Payment Method</h2>
                 <div className="flex items-center gap-3">

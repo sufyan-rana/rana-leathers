@@ -162,7 +162,7 @@ export default function ChangePasswordPage() {
                 {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-          </div>
+          </div> 
 
           <div>
             {getFieldLabel('new', 'New Password')}
@@ -177,7 +177,7 @@ export default function ChangePasswordPage() {
                 className="w-full px-4 py-3 bg-white/80 backdrop-blur-sm border-2 rounded-xl focus:outline-none focus:border-[#D4AF37] focus:ring-2 focus:ring-[#D4AF37]/20 transition-all duration-300 text-[#1A0F0A] placeholder:text-gray-400 pr-12"
                 required
                 placeholder="Enter new password (min 6 chars)"
-                minLength={6}
+                minLength={6} 
               />
               <button
                 type="button"
