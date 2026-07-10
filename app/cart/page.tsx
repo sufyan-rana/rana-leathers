@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Trash2, ShoppingBag, Plus, Minus, ArrowLeft } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CartPage() {
+  const router = useRouter();
+  const { user } = useAuth();
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice } = useCartStore();
   const [mounted, setMounted] = useState(false);
 
@@ -16,6 +20,18 @@ export default function CartPage() {
   const subtotal = getTotalPrice();
   const shipping = subtotal > 5000 ? 0 : 500;
   const total = subtotal + shipping;
+
+  const handleCheckout = () => {
+    // Check if user is logged in
+    if (!user) {
+      // Store the redirect URL to come back after login
+      sessionStorage.setItem('redirectAfterLogin', '/checkout');
+      router.push('/login');
+      return;
+    }
+    // If logged in, proceed to checkout
+    router.push('/checkout');
+  };
 
   if (!mounted) {
     return (
@@ -158,12 +174,12 @@ export default function CartPage() {
             </div>
           </div>
 
-          <Link
-            href="/checkout"
-            className="w-full bg-[#8B3A1A] text-white py-3 hover:bg-[#1A0F0A] transition block text-center"
+          <button
+            onClick={handleCheckout}
+            className="w-full bg-[#8B3A1A] text-white py-3 hover:bg-[#1A0F0A] transition block text-center rounded-lg"
           >
             Proceed to Checkout
-          </Link>
+          </button>
           
           <p className="text-xs text-gray-500 text-center mt-3">
             Free shipping on orders over Rs. 5,000

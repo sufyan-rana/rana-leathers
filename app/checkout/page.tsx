@@ -30,6 +30,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!user) {
+  sessionStorage.setItem('redirectAfterLogin', '/checkout');
       router.push('/login');
       return;
     }
