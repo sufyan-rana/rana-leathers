@@ -117,46 +117,62 @@ export default function CheckoutPage() {
     });
   };
 
-  const handlePlaceOrder = async () => {
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
-      alert('Please fill in all required fields');
-      return;
+ const handlePlaceOrder = async () => {
+  if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
+    alert('Please fill in all required fields');
+    return;
+  }
+
+  setLoading(true);
+  try {
+    // Map cart items to order items format
+    const orderItems = items.map(item => ({
+      id: item.id,        // Use item.id directly
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      size: item.size || null,
+      color: item.color || null,
+    }));
+
+    console.log('Sending order:', { items: orderItems, customer: formData }); // Debug log
+
+    const response = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: orderItems,
+        subtotal,
+        shipping,
+        total,
+        customer: {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+        },
+        paymentMethod: selectedPayment,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      setOrderNumber(data.orderNumber);
+      setOrderComplete(true);
+      clearCart();
+    } else {
+      alert(data.error || 'Failed to place order. Please try again.');
+      console.error('Order error:', data);
     }
-
-    setLoading(true);
-
-    try {
-      // Create order in database
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items,
-          subtotal,
-          shipping,
-          total,
-          customer: formData,
-          paymentMethod: selectedPayment,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrderNumber(data.orderNumber || `ORD-${Date.now()}`);
-        setOrderComplete(true);
-        clearCart();
-        setStep(2);
-      } else {
-        alert('Failed to place order. Please try again.');
-      }
-    } catch (error) {
-      console.error('Order error:', error);
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  } catch (error) {
+    alert('Something went wrong. Please try again.');
+    console.error('Order error:', error);
+  } finally {
+    setLoading(false);
+  }
+};
   if (orderComplete) {
     return (
       <div className="container-custom py-12 max-w-2xl">

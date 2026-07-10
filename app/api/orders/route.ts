@@ -6,48 +6,54 @@ export async function POST(request: Request) {
   try {
     const { items, subtotal, shipping, total, customer, paymentMethod } = await request.json();
 
+    // Validate required fields
+    if (!customer.fullName || !customer.email || !customer.phone || !customer.address) {
+      return NextResponse.json(
+        { error: 'Please fill in all required fields' },
+        { status: 400 }
+      );
+    }
+
     // Generate order number
     const orderNumber = `RANA-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    // Create order
+    // Insert order
     const result = await query(
       `INSERT INTO orders (
         order_number, 
-        user_id, 
         total_amount, 
         status, 
-        shipping_address, 
         payment_method,
         customer_name,
         customer_email,
         customer_phone,
-        customer_city
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        customer_city,
+        shipping_address
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id, order_number`,
       [
         orderNumber,
-        null, // user_id - will be added later when auth is fully integrated
         total,
         'pending',
-        customer.address,
         paymentMethod,
         customer.fullName,
         customer.email,
         customer.phone,
-        customer.city,
+        customer.city || 'N/A',
+        customer.address,
       ]
     );
 
     const orderId = result.rows[0].id;
 
-    // Create order items
+    // Insert order items
     for (const item of items) {
       await query(
         `INSERT INTO order_items (order_id, product_id, quantity, price, size, color)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           orderId,
-          item.id,
+          item.id || item.product_id,
           item.quantity,
           item.price,
           item.size || null,
@@ -65,7 +71,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Order creation error:', error);
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      { error: error.message || 'Failed to create order' },
       { status: 500 }
     );
   }
@@ -81,7 +87,7 @@ export async function GET(request: Request) {
         `SELECT * FROM orders WHERE order_number = $1`,
         [orderNumber]
       );
-      return NextResponse.json({ order: result.rows[0] });
+      return NextResponse.json({ order: result.rows[0] || null });
     }
 
     const result = await query(
