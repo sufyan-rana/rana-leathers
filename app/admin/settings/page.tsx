@@ -18,7 +18,8 @@ import {
   Instagram,
   Facebook,
   Twitter,
-  Youtube
+  Youtube,
+  Share2
 } from 'lucide-react';
 
 interface Settings {
