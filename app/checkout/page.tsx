@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
@@ -13,16 +13,14 @@ import {
   ArrowLeft,
   Copy,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ChevronRight,
+  ChevronLeft,
+  ArrowUp,
+  ArrowDown,
+  ArrowRight,
+  ArrowLeft as ArrowLeftIcon
 } from 'lucide-react';
-
-interface PaymentMethod {
-  id: string;
-  name: string;
-  icon: React.ReactNode;
-  description: string;
-  details: string[];
-}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -32,6 +30,8 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(1);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [focusedField, setFocusedField] = useState('fullName');
   
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
@@ -39,91 +39,137 @@ export default function CheckoutPage() {
     phone: '',
     address: '',
     city: '',
-    postalCode: '',
     notes: '',
   });
 
   const [selectedPayment, setSelectedPayment] = useState('easypaisa');
-  const [copied, setCopied] = useState(false);
+
+  // Refs for focus management
+  const fieldRefs = {
+    fullName: useRef<HTMLInputElement>(null),
+    email: useRef<HTMLInputElement>(null),
+    phone: useRef<HTMLInputElement>(null),
+    city: useRef<HTMLInputElement>(null),
+    address: useRef<HTMLInputElement>(null),
+    notes: useRef<HTMLInputElement>(null),
+    nextButton: useRef<HTMLButtonElement>(null),
+  };
+
+  const paymentRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const placeOrderRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
-    }
-    if (items.length === 0) {
-      router.push('/cart');
-    }
+    if (!user) router.push('/login');
+    if (items.length === 0) router.push('/cart');
   }, [user, items, router]);
+
+  useEffect(() => {
+    // Focus first field on mount
+    if (step === 1) {
+      setTimeout(() => fieldRefs.fullName.current?.focus(), 100);
+    }
+  }, [step]);
 
   const subtotal = getTotalPrice();
   const shipping = subtotal > 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
-  const paymentMethods: PaymentMethod[] = [
-    {
-      id: 'easypaisa',
-      name: 'EasyPaisa',
-      icon: <Wallet className="text-green-600" size={24} />,
-      description: 'Pay using EasyPaisa mobile account',
-      details: [
-        'Account Number: 0345-1234567',
-        'Account Title: RANA LEATHER\'S',
-        'Reference: Order # + Your Name',
-      ]
-    },
-    {
-      id: 'jazzcash',
-      name: 'JazzCash',
-      icon: <Wallet className="text-orange-500" size={24} />,
-      description: 'Pay using JazzCash mobile account',
-      details: [
-        'Account Number: 0321-7654321',
-        'Account Title: RANA LEATHER\'S',
-        'Reference: Order # + Your Name',
-      ]
-    },
-    {
-      id: 'bank',
-      name: 'Bank Transfer',
-      icon: <Building2 className="text-blue-600" size={24} />,
-      description: 'Direct bank transfer to our account',
-      details: [
-        'Bank: Meezan Bank',
-        'Account Title: RANA LEATHER\'S',
-        'Account Number: 1234-5678901-2',
-        'Branch: Sialkot, Pakistan',
-        'IBAN: PK99MEZN0012345678901234',
-      ]
-    },
-    {
-      id: 'cod',
-      name: 'Cash on Delivery',
-      icon: <CreditCard className="text-purple-600" size={24} />,
-      description: 'Pay when you receive your order',
-      details: [
-        'Pay at delivery with cash',
-        'Available nationwide',
-        'No extra charges',
-      ]
-    },
+  const paymentMethods = [
+    { id: 'easypaisa', name: 'EasyPaisa', icon: <Wallet className="text-green-600" size={24} />, details: ['Account: 0345-1234567', 'Title: RANA LEATHER\'S'] },
+    { id: 'jazzcash', name: 'JazzCash', icon: <Wallet className="text-orange-500" size={24} />, details: ['Account: 0321-7654321', 'Title: RANA LEATHER\'S'] },
+    { id: 'bank', name: 'Bank Transfer', icon: <Building2 className="text-blue-600" size={24} />, details: ['Bank: Meezan Bank', 'Account: 1234-5678901-2'] },
+    { id: 'cod', name: 'Cash on Delivery', icon: <CreditCard className="text-purple-600" size={24} />, details: ['Pay at delivery', 'Nationwide'] },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Keyboard navigation for Step 1 fields
+  const handleStep1KeyDown = (e: React.KeyboardEvent, fieldName: string) => {
+    const fields = ['fullName', 'email', 'phone', 'city', 'address', 'notes'];
+    const currentIndex = fields.indexOf(fieldName);
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (currentIndex === fields.length - 1) {
+        // Last field -> move to Next button
+        fieldRefs.nextButton.current?.focus();
+      } else {
+        const nextField = fields[currentIndex + 1];
+        setFocusedField(nextField);
+        fieldRefs[nextField as keyof typeof fieldRefs].current?.focus();
+      }
+    }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (currentIndex < fields.length - 1) {
+        const nextField = fields[currentIndex + 1];
+        setFocusedField(nextField);
+        fieldRefs[nextField as keyof typeof fieldRefs].current?.focus();
+      }
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (currentIndex > 0) {
+        const prevField = fields[currentIndex - 1];
+        setFocusedField(prevField);
+        fieldRefs[prevField as keyof typeof fieldRefs].current?.focus();
+      }
+    }
+  };
+
+  // Keyboard navigation for Step 2 (Payment Methods)
+  const handlePaymentKeyDown = (e: React.KeyboardEvent, index: number) => {
+    const totalMethods = paymentMethods.length;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      setSelectedPayment(paymentMethods[index].id);
+      // Move to Place Order button
+      setTimeout(() => placeOrderRef.current?.focus(), 50);
+    }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const nextIndex = (index + 1) % totalMethods;
+      paymentRefs.current[nextIndex]?.focus();
+    }
+
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const prevIndex = (index - 1 + totalMethods) % totalMethods;
+      paymentRefs.current[prevIndex]?.focus();
+    }
+
+    if (e.key === 'Tab' && !e.shiftKey && index === totalMethods - 1) {
+      // Move to Place Order button
+      setTimeout(() => placeOrderRef.current?.focus(), 50);
+    }
+  };
+
+  const validateStep1 = () => {
+    if (!formData.fullName) { alert('Please enter your full name'); fieldRefs.fullName.current?.focus(); return false; }
+    if (!formData.email) { alert('Please enter your email'); fieldRefs.email.current?.focus(); return false; }
+    if (!formData.phone) { alert('Please enter your phone number'); fieldRefs.phone.current?.focus(); return false; }
+    if (!formData.address) { alert('Please enter your address'); fieldRefs.address.current?.focus(); return false; }
+    if (!formData.city) { alert('Please enter your city'); fieldRefs.city.current?.focus(); return false; }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep1()) {
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => paymentRefs.current[0]?.focus(), 200);
+    }
   };
 
   const handlePlaceOrder = async () => {
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Map cart items to order items format
       const orderItems = items.map(item => ({
         id: item.id,
         name: item.name,
@@ -141,13 +187,7 @@ export default function CheckoutPage() {
           subtotal,
           shipping,
           total,
-          customer: {
-            fullName: formData.fullName,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
-            city: formData.city,
-          },
+          customer: formData,
           paymentMethod: selectedPayment,
         }),
       });
@@ -163,7 +203,6 @@ export default function CheckoutPage() {
       }
     } catch (error) {
       alert('Something went wrong. Please try again.');
-      console.error('Order error:', error);
     } finally {
       setLoading(false);
     }
@@ -176,7 +215,7 @@ export default function CheckoutPage() {
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle size={40} className="text-green-600" />
           </div>
-          <h1 className="text-3xl font-serif text-[#1A0F0A] mb-2">Order Placed! 🎉</h1>
+          <h1 className="text-3xl font-serif text-[#1A0F0A] mb-2">🎉 Order Placed!</h1>
           <p className="text-gray-500 mb-4">Thank you for your order!</p>
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-gray-600">Order Number</p>
@@ -197,105 +236,201 @@ export default function CheckoutPage() {
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Checkout Form */}
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-serif text-[#1A0F0A] mb-2">Checkout</h1>
-          <p className="text-gray-500 mb-6">Fill in your details to complete your order</p>
+          <p className="text-gray-500 mb-6">Complete your order in 2 simple steps</p>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10">
-            <h2 className="text-xl font-serif text-[#1A0F0A] mb-4">Shipping Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                  required
-                />
+          {/* Step Indicator */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step === 1 ? 'bg-[#8B3A1A] text-white' : 'bg-[#D4AF37] text-white'}`}>
+                {step === 1 ? '1' : '✓'}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                  required
-                />
+              <span className={`text-sm font-medium ${step === 1 ? 'text-[#8B3A1A]' : 'text-gray-400'}`}>Details</span>
+            </div>
+            <div className={`flex-1 h-0.5 ${step >= 2 ? 'bg-[#D4AF37]' : 'bg-gray-200'}`} />
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${step === 2 ? 'bg-[#8B3A1A] text-white' : 'bg-gray-200 text-gray-400'}`}>
+                2
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="03XX-XXXXXXX"
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                  required
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  placeholder="House #, Street, Area"
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                  required
-                />
-              </div>
+              <span className={`text-sm font-medium ${step === 2 ? 'text-[#8B3A1A]' : 'text-gray-400'}`}>Payment</span>
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 mt-6">
-            <h2 className="text-xl font-serif text-[#1A0F0A] mb-4">Payment Method</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {paymentMethods.map((method) => (
-                <button
-                  key={method.id}
-                  onClick={() => setSelectedPayment(method.id)}
-                  className={`p-4 border-2 rounded-xl text-left transition-all duration-300 ${
-                    selectedPayment === method.id
-                      ? 'border-[#D4AF37] bg-[#D4AF37]/5 shadow-md'
-                      : 'border-gray-200 hover:border-[#D4AF37]/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {method.icon}
-                    <div>
-                      <p className="font-semibold text-[#1A0F0A] text-sm">{method.name}</p>
-                    </div>
+          {/* Step 1: Details */}
+          {step === 1 && (
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 animate-fadeIn">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-serif text-[#1A0F0A]">Shipping Information</h2>
+                <div className="text-xs text-gray-400 flex items-center gap-2">
+                  <ArrowUp size={12} /> <ArrowDown size={12} /> <ArrowLeftIcon size={12} /> <ArrowRight size={12} /> navigate • Enter next
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { name: 'fullName', label: 'Full Name *', type: 'text', placeholder: 'Your full name' },
+                  { name: 'email', label: 'Email *', type: 'email', placeholder: 'your@email.com' },
+                  { name: 'phone', label: 'Phone *', type: 'tel', placeholder: '03XX-XXXXXXX' },
+                  { name: 'city', label: 'City *', type: 'text', placeholder: 'Your city' },
+                ].map((field) => (
+                  <div key={field.name} className={field.name === 'fullName' || field.name === 'email' ? 'md:col-span-1' : 'md:col-span-1'}>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
+                    <input
+                      ref={fieldRefs[field.name as keyof typeof fieldRefs]}
+                      type={field.type}
+                      name={field.name}
+                      value={formData[field.name as keyof typeof formData] as string}
+                      onChange={handleInputChange}
+                      onKeyDown={(e) => handleStep1KeyDown(e, field.name)}
+                      onFocus={() => setFocusedField(field.name)}
+                      className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                        focusedField === field.name
+                          ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md'
+                          : 'border-gray-200 hover:border-[#D4AF37]/50'
+                      }`}
+                      placeholder={field.placeholder}
+                      required
+                    />
                   </div>
-                </button>
-              ))}
+                ))}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+                  <input
+                    ref={fieldRefs.address}
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => handleStep1KeyDown(e, 'address')}
+                    onFocus={() => setFocusedField('address')}
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                      focusedField === 'address'
+                        ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md'
+                        : 'border-gray-200 hover:border-[#D4AF37]/50'
+                    }`}
+                    placeholder="House #, Street, Area"
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
+                  <input
+                    ref={fieldRefs.notes}
+                    type="text"
+                    name="notes"
+                    value={formData.notes || ''}
+                    onChange={handleInputChange}
+                    onKeyDown={(e) => handleStep1KeyDown(e, 'notes')}
+                    onFocus={() => setFocusedField('notes')}
+                    className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none transition-all duration-300 ${
+                      focusedField === 'notes'
+                        ? 'border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md'
+                        : 'border-gray-200 hover:border-[#D4AF37]/50'
+                    }`}
+                    placeholder="Special instructions..."
+                  />
+                </div>
+              </div>
+              <button
+                ref={fieldRefs.nextButton}
+                onClick={handleNextStep}
+                className="mt-6 w-full md:w-auto bg-[#8B3A1A] hover:bg-[#1A0F0A] text-white px-8 py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none"
+              >
+                Next Step <ChevronRight size={20} />
+              </button>
             </div>
-          </div>
+          )}
+
+          {/* Step 2: Payment */}
+          {step === 2 && (
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 animate-fadeIn">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-serif text-[#1A0F0A]">Payment Method</h2>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setStep(1)}
+                    className="text-sm text-[#8B3A1A] hover:text-[#D4AF37] transition flex items-center gap-1"
+                  >
+                    <ChevronLeft size={16} /> Edit Details
+                  </button>
+                  <div className="text-xs text-gray-400 flex items-center gap-2">
+                    <ArrowUp size={12} /> <ArrowDown size={12} /> <ArrowLeftIcon size={12} /> <ArrowRight size={12} /> navigate • Enter select
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {paymentMethods.map((method, index) => (
+                  <button
+                    key={method.id}
+                    ref={(el) => { paymentRefs.current[index] = el; }}
+                    onClick={() => setSelectedPayment(method.id)}
+                    onKeyDown={(e) => handlePaymentKeyDown(e, index)}
+                    className={`p-4 border-2 rounded-xl text-left transition-all duration-300 focus:ring-2 focus:ring-[#D4AF37] focus:outline-none ${
+                      selectedPayment === method.id
+                        ? 'border-[#D4AF37] bg-[#D4AF37]/5 shadow-md'
+                        : 'border-gray-200 hover:border-[#D4AF37]/50'
+                    }`}
+                    tabIndex={0}
+                  >
+                    <div className="flex items-center gap-2">
+                      {method.icon}
+                      <span className="font-medium text-[#1A0F0A] text-sm">{method.name}</span>
+                      {selectedPayment === method.id && <Check size={16} className="text-[#D4AF37] ml-auto" />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {selectedPayment && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <h3 className="font-semibold text-[#1A0F0A] mb-2 text-sm">
+                    {paymentMethods.find(p => p.id === selectedPayment)?.name} Details
+                  </h3>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    {paymentMethods.find(p => p.id === selectedPayment)?.details.map((detail, i) => (
+                      <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
+                        <span>{detail}</span>
+                        {detail.includes('Account') && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(detail.split(': ')[1]);
+                              setCopied(true);
+                              setTimeout(() => setCopied(false), 2000);
+                            }}
+                            className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
+                          >
+                            <Copy size={14} />
+                            {copied ? 'Copied!' : 'Copy'}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                    <AlertCircle size={14} className="inline mr-1" />
+                    Send confirmation to: info@ranaleathers.com
+                  </div>
+                </div>
+              )}
+
+              <button
+                ref={placeOrderRef}
+                onClick={handlePlaceOrder}
+                disabled={loading}
+                className="mt-6 w-full bg-gradient-to-r from-[#8B3A1A] to-[#1A0F0A] hover:from-[#6B2A10] hover:to-[#1A0F0A] text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 shadow-lg focus:ring-2 focus:ring-[#D4AF37] focus:outline-none"
+                tabIndex={0}
+              >
+                {loading ? 'Processing...' : 'Place Order ✓'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 sticky top-24">
             <h2 className="text-xl font-serif text-[#1A0F0A] mb-4">Order Summary</h2>
-            
             <div className="space-y-3 max-h-60 overflow-y-auto mb-4">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 pb-3 border-b">
@@ -308,7 +443,6 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
-
             <div className="space-y-2 border-t pt-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal</span>
@@ -323,14 +457,9 @@ export default function CheckoutPage() {
                 <span className="text-[#8B3A1A]">Rs. {total.toLocaleString()}</span>
               </div>
             </div>
-
-            <button
-              onClick={handlePlaceOrder}
-              disabled={loading}
-              className="w-full mt-6 bg-gradient-to-r from-[#8B3A1A] to-[#1A0F0A] text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 shadow-lg"
-            >
-              {loading ? 'Processing...' : 'Place Order'}
-            </button>
+            <div className="mt-4 text-xs text-gray-400 text-center">
+              {step === 1 ? 'Fill details then proceed' : 'Confirm and place your order'}
+            </div>
           </div>
         </div>
       </div>
