@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,6 @@ import {
   CreditCard, 
   Building2, 
   Wallet, 
-  Truck, 
   Check, 
   ArrowLeft,
   Copy,
@@ -41,7 +40,6 @@ export default function CheckoutPage() {
     address: '',
     city: '',
     postalCode: '',
-    paymentMethod: 'easypaisa',
     notes: '',
   });
 
@@ -110,69 +108,67 @@ export default function CheckoutPage() {
     },
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
 
- const handlePlaceOrder = async () => {
-  if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
-    alert('Please fill in all required fields');
-    return;
-  }
-
-  setLoading(true);
-  try {
-    // Map cart items to order items format
-    const orderItems = items.map(item => ({
-      id: item.id,        // Use item.id directly
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      size: item.size || null,
-      color: item.color || null,
-    }));
-
-    console.log('Sending order:', { items: orderItems, customer: formData }); // Debug log
-
-    const response = await fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: orderItems,
-        subtotal,
-        shipping,
-        total,
-        customer: {
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          city: formData.city,
-        },
-        paymentMethod: selectedPayment,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      setOrderNumber(data.orderNumber);
-      setOrderComplete(true);
-      clearCart();
-    } else {
-      alert(data.error || 'Failed to place order. Please try again.');
-      console.error('Order error:', data);
+  const handlePlaceOrder = async () => {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
+      alert('Please fill in all required fields');
+      return;
     }
-  } catch (error) {
-    alert('Something went wrong. Please try again.');
-    console.error('Order error:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+
+    setLoading(true);
+    try {
+      // Map cart items to order items format
+      const orderItems = items.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        size: item.size || null,
+        color: item.color || null,
+      }));
+
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: orderItems,
+          subtotal,
+          shipping,
+          total,
+          customer: {
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+            city: formData.city,
+          },
+          paymentMethod: selectedPayment,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOrderNumber(data.orderNumber);
+        setOrderComplete(true);
+        clearCart();
+      } else {
+        alert(data.error || 'Failed to place order. Please try again.');
+      }
+    } catch (error) {
+      alert('Something went wrong. Please try again.');
+      console.error('Order error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (orderComplete) {
     return (
       <div className="container-custom py-12 max-w-2xl">
@@ -186,31 +182,9 @@ export default function CheckoutPage() {
             <p className="text-sm text-gray-600">Order Number</p>
             <p className="text-xl font-bold text-[#8B3A1A]">{orderNumber}</p>
           </div>
-          <div className="space-y-2 text-left mb-6">
-            <p className="text-sm text-gray-600">
-              <strong>Payment Method:</strong> {paymentMethods.find(p => p.id === selectedPayment)?.name}
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>Total Amount:</strong> Rs. {total.toLocaleString()}
-            </p>
-            <p className="text-sm text-gray-500 mt-4">
-              You will receive a confirmation email shortly. For payment instructions, please check your email or contact us.
-            </p>
-          </div>
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/products"
-              className="bg-[#8B3A1A] text-white px-6 py-2 rounded-lg hover:bg-[#1A0F0A] transition"
-            >
-              Continue Shopping
-            </Link>
-            <Link
-              href={`/orders/${orderNumber}`}
-              className="border border-[#8B3A1A] text-[#8B3A1A] px-6 py-2 rounded-lg hover:bg-[#8B3A1A] hover:text-white transition"
-            >
-              View Order
-            </Link>
-          </div>
+          <Link href="/products" className="bg-[#8B3A1A] text-white px-6 py-2 rounded-lg hover:bg-[#1A0F0A] transition inline-block">
+            Continue Shopping
+          </Link>
         </div>
       </div>
     );
@@ -227,14 +201,6 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2">
           <h1 className="text-3xl font-serif text-[#1A0F0A] mb-2">Checkout</h1>
           <p className="text-gray-500 mb-6">Fill in your details to complete your order</p>
-
-          {/* Step Indicator */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className={`flex-1 h-1 rounded-full ${step >= 1 ? 'bg-[#8B3A1A]' : 'bg-gray-200'}`} />
-            <span className="text-sm font-medium text-[#8B3A1A]">Step 1: Details</span>
-            <div className={`flex-1 h-1 rounded-full ${step >= 2 ? 'bg-[#8B3A1A]' : 'bg-gray-200'}`} />
-            <span className={`text-sm font-medium ${step >= 2 ? 'text-[#8B3A1A]' : 'text-gray-400'}`}>Step 2: Payment</span>
-          </div>
 
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10">
             <h2 className="text-xl font-serif text-[#1A0F0A] mb-4">Shipping Information</h2>
@@ -296,34 +262,13 @@ export default function CheckoutPage() {
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-                <input
-                  type="text"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
-                <input
-                  type="text"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  placeholder="Special instructions..."
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                />
-              </div>
             </div>
           </div>
 
           {/* Payment Methods */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-[#D4AF37]/10 mt-6">
             <h2 className="text-xl font-serif text-[#1A0F0A] mb-4">Payment Method</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {paymentMethods.map((method) => (
                 <button
                   key={method.id}
@@ -337,49 +282,12 @@ export default function CheckoutPage() {
                   <div className="flex items-center gap-3">
                     {method.icon}
                     <div>
-                      <p className="font-semibold text-[#1A0F0A]">{method.name}</p>
-                      <p className="text-xs text-gray-500">{method.description}</p>
+                      <p className="font-semibold text-[#1A0F0A] text-sm">{method.name}</p>
                     </div>
-                    {selectedPayment === method.id && (
-                      <Check size={16} className="text-[#D4AF37] ml-auto" />
-                    )}
                   </div>
                 </button>
               ))}
             </div>
-
-            {/* Payment Details */}
-            {selectedPayment && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                <h3 className="font-semibold text-[#1A0F0A] mb-2">
-                  {paymentMethods.find(p => p.id === selectedPayment)?.name} Details
-                </h3>
-                <div className="space-y-1 text-sm text-gray-600">
-                  {paymentMethods.find(p => p.id === selectedPayment)?.details.map((detail, i) => (
-                    <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
-                      <span>{detail}</span>
-                      {detail.includes('Number') && (
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(detail.split(': ')[1]);
-                            setCopied(true);
-                            setTimeout(() => setCopied(false), 2000);
-                          }}
-                          className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
-                        >
-                          <Copy size={14} />
-                          {copied ? 'Copied!' : 'Copy'}
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
-                  <AlertCircle size={14} className="inline mr-1" />
-                  Please send payment confirmation to info@ranaleathers.com
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -391,18 +299,12 @@ export default function CheckoutPage() {
             <div className="space-y-3 max-h-60 overflow-y-auto mb-4">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 pb-3 border-b">
-                  <img
-                    src={item.image || '/images/products/jacket.jpg'}
-                    alt={item.name}
-                    className="w-12 h-12 object-cover rounded"
-                  />
+                  <img src={item.image || '/images/products/jacket.jpg'} alt={item.name} className="w-12 h-12 object-cover rounded" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-[#1A0F0A]">{item.name}</p>
                     <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-semibold text-[#8B3A1A]">
-                    Rs. {(item.price * item.quantity).toLocaleString()}
-                  </p>
+                  <p className="text-sm font-semibold text-[#8B3A1A]">Rs. {(item.price * item.quantity).toLocaleString()}</p>
                 </div>
               ))}
             </div>
@@ -425,24 +327,10 @@ export default function CheckoutPage() {
             <button
               onClick={handlePlaceOrder}
               disabled={loading}
-              className="w-full mt-6 bg-gradient-to-r from-[#8B3A1A] to-[#1A0F0A] hover:from-[#6B2A10] hover:to-[#1A0F0A] text-white py-3 rounded-xl font-semibold transition-all duration-500 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              className="w-full mt-6 bg-gradient-to-r from-[#8B3A1A] to-[#1A0F0A] text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 shadow-lg"
             >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                'Place Order'
-              )}
+              {loading ? 'Processing...' : 'Place Order'}
             </button>
-
-            <p className="text-xs text-gray-400 text-center mt-4">
-              By placing an order, you agree to our Terms & Conditions
-            </p>
           </div>
         </div>
       </div>
