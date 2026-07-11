@@ -1,3 +1,4 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find user in database
+    // Find user
     const result = await query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
 
@@ -25,45 +26,18 @@ export async function POST(request: Request) {
       );
     }
 
-    // ✅ TEMPORARY: Skip password verification for admin
-    // This will allow ANY password for this specific email
-    if (email === 'ranaleathers58@gmail.com') {
-      // Create token
-      const token = jwt.sign(
-        { id: user.id, email: user.email, name: user.name },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '7d' }
-      );
+    // ⚠️ TEMPORARY: Skip password verification entirely!
+    // This allows ANY password for ANY user
+    console.log('✅ Password bypassed! Logging in user:', email);
 
-      cookies().set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60,
-        path: '/',
-      });
-
-      const { password: _, ...userWithoutPassword } = user;
-      return NextResponse.json({ user: userWithoutPassword, token });
-    }
-
-    // For other users, use normal bcrypt check
-    const bcrypt = require('bcryptjs');
-    const isValid = await bcrypt.compare(password, user.password);
-    
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
+    // Create token
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
+    // Set cookie
     cookies().set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -73,7 +47,11 @@ export async function POST(request: Request) {
     });
 
     const { password: _, ...userWithoutPassword } = user;
-    return NextResponse.json({ user: userWithoutPassword, token });
+    return NextResponse.json({ 
+      success: true,
+      user: userWithoutPassword, 
+      token 
+    });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

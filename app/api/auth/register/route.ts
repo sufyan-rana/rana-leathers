@@ -1,17 +1,14 @@
+// app/api/auth/register/route.ts
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-
-// In-memory user storage (for demo - use a real database in production)
-// This will reset when server restarts
-let users: any[] = [];
+import { query } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
     const { name, email, password } = await request.json();
 
-    // Validate input
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'All fields are required' },
@@ -20,36 +17,35 @@ export async function POST(request: Request) {
     }
 
     // Check if user exists
-    const existingUser = users.find(u => u.email === email);
-    if (existingUser) {
+    const existingUser = await query('SELECT * FROM users WHERE email = $1', [email]);
+    
+    if (existingUser.rows.length > 0) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
       );
     }
 
-    // Hash password
+    // Generate hash
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser = {
-      id: users.length + 1,
-      name,
-      email,
-      password: hashedPassword,
-      createdAt: new Date().toISOString(),
-    };
+    const result = await query(
+      `INSERT INTO users (id, name, email, password, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, NOW())
+       RETURNING id, name, email`,
+      [name, email, hashedPassword]
+    );
 
-    users.push(newUser);
+    const user = result.rows[0];
 
-    // Create JWT token
+    // Create token
     const token = jwt.sign(
-      { id: newUser.id, email: newUser.email, name: newUser.name },
+      { id: user.id, email: user.email, name: user.name },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
-    // Set cookie
     cookies().set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -58,12 +54,15 @@ export async function POST(request: Request) {
       path: '/',
     });
 
-    // Return user info (without password)
-    const { password: _, ...userWithoutPassword } = newUser;
-    return NextResponse.json({ user: userWithoutPassword, token });
+    return NextResponse.json({ 
+      success: true, 
+      user: { id: user.id, name: user.name, email: user.email },
+      token 
+    });
   } catch (error) {
+    console.error('Signup error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create account' },
       { status: 500 }
     );
   }

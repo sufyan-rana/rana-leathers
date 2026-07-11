@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+ const register = async (name: string, email: string, password: string) => {
   try {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
@@ -67,11 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const data = await res.json();
     if (res.ok) {
-      // ✅ FIX: Don't auto-login, just show success
-      // setUser(data.user); // Remove this line
+      setUser(data.user);
       return { success: true };
     }
-    return { success: false, error: data.error };
+    return { success: false, error: data.error || 'Registration failed' };
   } catch (error) {
     return { success: false, error: 'Something went wrong' };
   }
