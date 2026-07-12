@@ -7,9 +7,18 @@ export async function POST(request: Request) {
     const { items, subtotal, shipping, total, customer, paymentMethod } = await request.json();
 
     // Validate required fields
-    if (!customer.fullName || !customer.email || !customer.phone || !customer.address) {
+    if (!customer.fullName || !customer.email || !customer.phone || !customer.address || !customer.city) {
       return NextResponse.json(
         { error: 'Please fill in all required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate phone number (11 digits, starts with 03)
+    const phoneRegex = /^03\d{9}$/;
+    if (!phoneRegex.test(customer.phone.replace(/[\s\-\(\)]/g, ''))) {
+      return NextResponse.json(
+        { error: 'Please enter a valid 11-digit Pakistani phone number' },
         { status: 400 }
       );
     }
@@ -17,7 +26,7 @@ export async function POST(request: Request) {
     // Generate order number
     const orderNumber = `RANA-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    // Insert order
+    // Insert order with all fields including country, postalCode, and notes
     const result = await query(
       `INSERT INTO orders (
         order_number, 
@@ -28,8 +37,11 @@ export async function POST(request: Request) {
         customer_email,
         customer_phone,
         customer_city,
+        customer_country,
+        customer_postal_code,
+        order_notes,
         shipping_address
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING id, order_number`,
       [
         orderNumber,
@@ -40,6 +52,9 @@ export async function POST(request: Request) {
         customer.email,
         customer.phone,
         customer.city || 'N/A',
+        customer.country || 'Pakistan',
+        customer.postalCode || null,
+        customer.notes || null,
         customer.address,
       ]
     );

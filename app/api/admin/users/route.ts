@@ -54,12 +54,19 @@ export async function DELETE(request: Request) {
       );
     }
 
-    // Prevent deleting yourself
-    // In a real app, you'd check the session user ID here
+    // Check if user exists
+    const userCheck = await query('SELECT id, email FROM users WHERE id = $1', [userId]);
+    if (userCheck.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
 
+    // Delete user (cascade will handle related records)
     await query('DELETE FROM users WHERE id = $1', [userId]);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'User deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting user:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -5,7 +5,43 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cartStore';
 import { useAuth } from '@/context/AuthContext';
-import { CreditCard, Building2, Wallet, Check, ArrowLeft, Copy, CheckCircle, AlertCircle, ChevronRight, ChevronLeft } from 'lucide-react';
+import { 
+  CreditCard, 
+  Building2, 
+  Wallet, 
+  Check, 
+  ArrowLeft,
+  Copy,
+  CheckCircle,
+  AlertCircle,
+  ChevronRight,
+  ChevronLeft
+} from 'lucide-react';
+
+// Country lists
+const asianCountries = [
+  'Pakistan', 'India', 'China', 'Japan', 'South Korea', 
+  'Indonesia', 'Malaysia', 'Singapore', 'Thailand', 'Vietnam',
+  'Philippines', 'Bangladesh', 'Sri Lanka', 'Nepal', 'Afghanistan',
+  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain'
+];
+
+const europeanCountries = [
+  'United Kingdom', 'Germany', 'France', 'Italy', 'Spain',
+  'Netherlands', 'Switzerland', 'Sweden', 'Norway', 'Denmark',
+  'Finland', 'Belgium', 'Austria', 'Greece', 'Portugal',
+  'Ireland', 'Poland', 'Czech Republic', 'Hungary', 'Romania'
+];
+
+const allCountries = [...asianCountries, ...europeanCountries].sort();
+
+// Pakistani Cities
+const pakistaniCities = [
+  'Karachi', 'Lahore', 'Islamabad', 'Rawalpindi', 'Faisalabad',
+  'Multan', 'Hyderabad', 'Gujranwala', 'Peshawar', 'Quetta',
+  'Sialkot', 'Sargodha', 'Bahawalpur', 'Sukkur', 'Larkana',
+  'Mingora', 'Mardan', 'Gujrat', 'Kasur', 'Rahim Yar Khan'
+];
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -16,6 +52,7 @@ export default function CheckoutPage() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [copied, setCopied] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
@@ -23,6 +60,8 @@ export default function CheckoutPage() {
     phone: '',
     address: '',
     city: '',
+    country: 'Pakistan',
+    postalCode: '',
     notes: '',
   });
 
@@ -30,7 +69,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!user) {
-  sessionStorage.setItem('redirectAfterLogin', '/checkout');
       router.push('/login');
       return;
     }
@@ -44,39 +82,75 @@ export default function CheckoutPage() {
   const shipping = subtotal > 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
-  const paymentMethods = [
-    { id: 'easypaisa', name: 'EasyPaisa', icon: <Wallet className="text-green-600" size={24} />, details: ['Account: 0345-1234567', 'Title: RANA LEATHER\'S'] },
-    { id: 'jazzcash', name: 'JazzCash', icon: <Wallet className="text-orange-500" size={24} />, details: ['Account: 0321-7654321', 'Title: RANA LEATHER\'S'] },
-    { id: 'bank', name: 'Bank Transfer', icon: <Building2 className="text-blue-600" size={24} />, details: ['Bank: Meezan Bank', 'Account: 1234-5678901-2'] },
-    { id: 'cod', name: 'Cash on Delivery', icon: <CreditCard className="text-purple-600" size={24} />, details: ['Pay at delivery', 'Nationwide'] },
-  ];
+  // Phone validation for Pakistani numbers
+  const validatePhone = (phone: string) => {
+    // Remove spaces and special characters
+    const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+    // Must be 11 digits and start with 03
+    const phoneRegex = /^03\d{9}$/;
+    return phoneRegex.test(cleaned);
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Postal code validation (Pakistan 5 digits)
+  const validatePostalCode = (code: string) => {
+    const postalRegex = /^\d{5}$/;
+    return postalRegex.test(code);
   };
 
   const validateStep1 = () => {
+    const newErrors: Record<string, string> = {};
+
     if (!formData.fullName?.trim()) {
-      alert('Please enter your full name');
-      return false;
+      newErrors.fullName = 'Full name is required';
     }
+
     if (!formData.email?.trim()) {
-      alert('Please enter your email');
-      return false;
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
     }
+
     if (!formData.phone?.trim()) {
-      alert('Please enter your phone number');
-      return false;
+      newErrors.phone = 'Phone number is required';
+    } else if (!validatePhone(formData.phone)) {
+      newErrors.phone = 'Please enter a valid 11-digit Pakistani phone number (03XX-XXXXXXX)';
     }
+
     if (!formData.address?.trim()) {
-      alert('Please enter your address');
-      return false;
+      newErrors.address = 'Address is required';
     }
+
     if (!formData.city?.trim()) {
-      alert('Please enter your city');
-      return false;
+      newErrors.city = 'City is required';
     }
-    return true;
+
+    if (!formData.country?.trim()) {
+      newErrors.country = 'Country is required';
+    }
+
+    if (formData.postalCode && !validatePostalCode(formData.postalCode)) {
+      newErrors.postalCode = 'Postal code must be 5 digits';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    
+    // Clear error for this field when user types
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' });
+    }
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    setFormData({ ...formData, phone: value });
+    if (errors.phone) setErrors({ ...errors, phone: '' });
   };
 
   const handleNextStep = () => {
@@ -87,10 +161,7 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!formData.fullName?.trim() || !formData.email?.trim() || !formData.phone?.trim() || !formData.address?.trim() || !formData.city?.trim()) {
-      alert('Please fill in all required fields');
-      return;
-    }
+    if (!validateStep1()) return;
 
     setLoading(true);
     try {
@@ -123,6 +194,8 @@ export default function CheckoutPage() {
             phone: formData.phone.trim(),
             address: formData.address.trim(),
             city: formData.city.trim(),
+            country: formData.country.trim(),
+            postalCode: formData.postalCode.trim(),
             notes: formData.notes?.trim() || '',
           },
           paymentMethod: selectedPayment,
@@ -208,9 +281,12 @@ export default function CheckoutPage() {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.fullName ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     required
                   />
+                  {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
@@ -219,32 +295,75 @@ export default function CheckoutPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     required
                   />
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                   <input
-                    type="tel"
+                    type="text"
                     name="phone"
                     value={formData.phone}
-                    onChange={handleInputChange}
+                    onChange={handlePhoneChange}
                     placeholder="03XX-XXXXXXX"
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     required
                   />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
+                  <p className="text-gray-400 text-xs mt-1">Format: 03XX-XXXXXXX (11 digits)</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                  <select
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.country ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    {allCountries.map((country) => (
+                      <option key={country} value={country}>{country}</option>
+                    ))}
+                  </select>
+                  {errors.country && <p className="text-red-500 text-xs mt-1">{errors.country}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                  <input
-                    type="text"
+                  <select
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
-                    required
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.city ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                  >
+                    <option value="">Select a city</option>
+                    {pakistaniCities.map((city) => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                  {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    placeholder="e.g., 54000"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.postalCode ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
@@ -254,9 +373,12 @@ export default function CheckoutPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     placeholder="House #, Street, Area"
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
+                      errors.address ? 'border-red-500' : 'border-gray-300'
+                    }`}
                     required
                   />
+                  {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Order Notes</label>
@@ -293,7 +415,12 @@ export default function CheckoutPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {paymentMethods.map((method) => (
+                {[
+                  { id: 'easypaisa', name: 'EasyPaisa', icon: <Wallet className="text-green-600" size={24} />, details: ['Account: 0345-1234567', 'Title: RANA LEATHER\'S'] },
+                  { id: 'jazzcash', name: 'JazzCash', icon: <Wallet className="text-orange-500" size={24} />, details: ['Account: 0321-7654321', 'Title: RANA LEATHER\'S'] },
+                  { id: 'bank', name: 'Bank Transfer', icon: <Building2 className="text-blue-600" size={24} />, details: ['Bank: Meezan Bank', 'Account: 1234-5678901-2'] },
+                  { id: 'cod', name: 'Cash on Delivery', icon: <CreditCard className="text-purple-600" size={24} />, details: ['Pay at delivery', 'Nationwide'] },
+                ].map((method) => (
                   <button
                     key={method.id}
                     onClick={() => setSelectedPayment(method.id)}
@@ -315,10 +442,15 @@ export default function CheckoutPage() {
               {selectedPayment && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <h3 className="font-semibold text-[#1A0F0A] mb-2 text-sm">
-                    {paymentMethods.find(p => p.id === selectedPayment)?.name} Details
+                    {['EasyPaisa', 'JazzCash', 'Bank Transfer', 'Cash on Delivery'][['easypaisa','jazzcash','bank','cod'].indexOf(selectedPayment)]} Details
                   </h3>
                   <div className="space-y-1 text-sm text-gray-600">
-                    {paymentMethods.find(p => p.id === selectedPayment)?.details.map((detail, i) => (
+                    {[
+                      ['Account: 0345-1234567', 'Title: RANA LEATHER\'S'],
+                      ['Account: 0321-7654321', 'Title: RANA LEATHER\'S'],
+                      ['Bank: Meezan Bank', 'Account: 1234-5678901-2'],
+                      ['Pay at delivery', 'Nationwide'],
+                    ][['easypaisa','jazzcash','bank','cod'].indexOf(selectedPayment)].map((detail, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
                         <span>{detail}</span>
                         {detail.includes('Account') && (
