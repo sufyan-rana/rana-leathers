@@ -39,10 +39,18 @@ export const useCartStore = create<CartStore>()(
         } else {
           set({ items: [...items, item] });
         }
+        
+        // Dispatch event for navbar update
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('cartUpdated'));
+        }
       },
 
       removeItem: (id) => {
         set({ items: get().items.filter((item) => item.id !== id) });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('cartUpdated'));
+        }
       },
 
       updateQuantity: (id, quantity) => {
@@ -55,10 +63,17 @@ export const useCartStore = create<CartStore>()(
         } else if (quantity === 0) {
           get().removeItem(id);
         }
+        
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('cartUpdated'));
+        }
       },
 
       clearCart: () => {
         set({ items: [] });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('cartUpdated'));
+        }
       },
 
       getTotalItems: () => {

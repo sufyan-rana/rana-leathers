@@ -104,23 +104,24 @@ export default function ProductDetailPage() {
     notFound();
   }
 
-  const handleAddToCart = () => {
-    // Add item to cart using Zustand store
-    addItemToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: quantity,
-      image: product.image,
-      slug: product.slug,
-      size: selectedSize,
-      color: selectedColor,
-    });
-    
-    // Show feedback to user
+    const handleAddToCart = () => {
+         addItemToCart({
+         id: product.id,
+         name: product.name,
+         price: product.price,
+         quantity: quantity,
+         image: product.image,
+         slug: product.slug,
+         size: selectedSize,
+         color: selectedColor,
+     });
+  
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
-  };
+  
+  // Show a toast or notification
+     alert(`${product.name} added to cart!`);
+};
 
   return (
     <div className="container-custom py-12">

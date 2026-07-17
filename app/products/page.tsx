@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/store/cartStore";
 
 const products = [
   { 
@@ -69,18 +70,22 @@ const categories = ["all", "jackets", "bags", "belts", "wallets", "shoes"];
 
 const getCategoryIcon = (category: string) => {
   switch(category) {
-    case "jackets": return "ðŸ§¥";
-    case "bags": return "ðŸ‘œ";
-    case "belts": return "ðŸ‘”";
-    case "wallets": return "ðŸ‘›";
-    case "shoes": return "ðŸ‘ž";
-    default: return "ðŸ‘œ";
+    case "jackets": return "🧥";
+    case "bags": return "👜";
+    case "belts": return "👔";
+    case "wallets": return "👛";
+    case "shoes": return "👞";
+    default: return "👜";
   }
 };
 
 export default function ProductsPage() {
   const [category, setCategory] = useState("all");
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
+  const [addedProduct, setAddedProduct] = useState<number | null>(null);
+  
+  // Get the addItem function from cart store
+  const addItemToCart = useCartStore((state) => state.addItem);
   
   const filteredProducts = category === "all" 
     ? products 
@@ -88,6 +93,26 @@ export default function ProductsPage() {
 
   const handleImageError = (id: number) => {
     setImgErrors(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleAddToCart = (e: React.MouseEvent, product: typeof products[0]) => {
+    e.preventDefault(); // Prevent navigation to product detail
+    e.stopPropagation(); // Stop event bubbling
+    
+    addItemToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      image: product.image,
+      slug: product.slug,
+    });
+    
+    setAddedProduct(product.id);
+    setTimeout(() => setAddedProduct(null), 2000);
+    
+    // Show feedback
+    alert(`${product.name} added to cart! 🛒`);
   };
 
   return (
@@ -146,11 +171,24 @@ export default function ProductsPage() {
                   )}
                 </div>
                 <div className="flex items-center justify-between mt-3">
-                  <div className="flex text-yellow-500">{"â˜…".repeat(Math.floor(product.rating))}{"â˜†".repeat(5-Math.floor(product.rating))}</div>
-                  <button className="bg-[#8B3A1A] text-white p-2 rounded-full hover:bg-[#1A0F0A] transition">
+                  <div className="flex text-yellow-500">
+                    {"★".repeat(Math.floor(product.rating))}
+                    {"☆".repeat(5 - Math.floor(product.rating))}
+                  </div>
+                  <button 
+                    onClick={(e) => handleAddToCart(e, product)}
+                    className={`p-2 rounded-full transition ${
+                      addedProduct === product.id 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-[#8B3A1A] text-white hover:bg-[#1A0F0A]'
+                    }`}
+                  >
                     <ShoppingBag size={18} />
                   </button>
                 </div>
+                {addedProduct === product.id && (
+                  <p className="text-green-600 text-xs text-center mt-2 font-medium">✓ Added to cart!</p>
+                )}
               </div>
             </Link>
           </div>
