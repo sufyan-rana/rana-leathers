@@ -64,7 +64,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     if (result.success) {
       onClose();
       if (onSuccess) onSuccess();
-    } else {
+
+      // If registration was successful and user is logged in, redirect
+    if (!isLogin && result.success) {
+      // The AuthContext handles redirect
+    
+     } else {
       setError(result.error || 'Something went wrong');
     }
     setLoading(false);

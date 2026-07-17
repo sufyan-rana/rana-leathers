@@ -1,9 +1,10 @@
+// context/AuthContext.tsx
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role?: string;
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Check auth on mount
   useEffect(() => {
     checkAuth();
   }, []);
@@ -32,8 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch('/api/auth/me');
       const data = await res.json();
-      setUser(data.user);
+      if (data.user) {
+        setUser(data.user);
+      }
     } catch (error) {
+      console.error('Auth check error:', error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -50,35 +55,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
+        // Redirect to stored redirect URL or home
+        const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
+        sessionStorage.removeItem('redirectAfterLogin');
+        window.location.href = redirectUrl;
         return { success: true };
       }
-      return { success: false, error: data.error };
+      return { success: false, error: data.error || 'Login failed' };
     } catch (error) {
       return { success: false, error: 'Something went wrong' };
     }
   };
 
- const register = async (name: string, email: string, password: string) => {
-  try {
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setUser(data.user);
-      return { success: true };
+  const register = async (name: string, email: string, password: string) => {
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUser(data.user);
+        // After registration, redirect to login page or home
+        const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
+        sessionStorage.removeItem('redirectAfterLogin');
+        window.location.href = redirectUrl;
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Registration failed' };
+    } catch (error) {
+      return { success: false, error: 'Something went wrong' };
     }
-    return { success: false, error: data.error || 'Registration failed' };
-  } catch (error) {
-    return { success: false, error: 'Something went wrong' };
-  }
-};
+  };
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
