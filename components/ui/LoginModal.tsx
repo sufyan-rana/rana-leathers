@@ -20,14 +20,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<'name' | 'email' | 'password'>('email');
   
-  // Refs for keyboard navigation
   const nameInputRef = useRef<HTMLInputElement>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   
   const { login, register } = useAuth();
 
-  // Focus on email input when modal opens
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -64,61 +62,47 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     if (result.success) {
       onClose();
       if (onSuccess) onSuccess();
-
-      // If registration was successful and user is logged in, redirect
-    if (!isLogin && result.success) {
-      // The AuthContext handles redirect
-    
-     } else {
+    } else {
       setError(result.error || 'Something went wrong');
     }
     setLoading(false);
   };
 
-  // Keyboard navigation: Up/Down arrows only (No Enter key)
-const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'password') => {
-  // Prevent Enter key from submitting
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    return;
-  }
-
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    
-    // Define the fields with proper type
-    const fields: ('name' | 'email' | 'password')[] = isLogin 
-      ? ['email', 'password'] 
-      : ['name', 'email', 'password'];
-    
-    const currentIndex = fields.indexOf(field);
-    
-    if (currentIndex === -1) return;
-    
-    if (e.key === 'ArrowDown') {
-      const nextIndex = (currentIndex + 1) % fields.length;
-      const nextField = fields[nextIndex];
-      moveFocus(nextField);
-    } else if (e.key === 'ArrowUp') {
-      const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
-      const prevField = fields[prevIndex];
-      moveFocus(prevField);
+  const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'password') => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      return;
     }
-  }
-};
 
-  const moveFocus = (field: 'name' | 'email' | 'password') => {
-    setFocusedField(field);
-    if (field === 'name') {
-      nameInputRef.current?.focus();
-    } else if (field === 'email') {
-      emailInputRef.current?.focus();
-    } else if (field === 'password') {
-      passwordInputRef.current?.focus();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      
+      const fields: ('name' | 'email' | 'password')[] = isLogin 
+        ? ['email', 'password'] 
+        : ['name', 'email', 'password'];
+      
+      const currentIndex = fields.indexOf(field);
+      
+      if (currentIndex === -1) return;
+      
+      if (e.key === 'ArrowDown') {
+        const nextIndex = (currentIndex + 1) % fields.length;
+        const nextField = fields[nextIndex];
+        setFocusedField(nextField);
+        if (nextField === 'name') nameInputRef.current?.focus();
+        else if (nextField === 'email') emailInputRef.current?.focus();
+        else if (nextField === 'password') passwordInputRef.current?.focus();
+      } else if (e.key === 'ArrowUp') {
+        const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
+        const prevField = fields[prevIndex];
+        setFocusedField(prevField);
+        if (prevField === 'name') nameInputRef.current?.focus();
+        else if (prevField === 'email') emailInputRef.current?.focus();
+        else if (prevField === 'password') passwordInputRef.current?.focus();
+      }
     }
   };
 
-  // Get field label with arrow indicator
   const getFieldLabel = (field: 'name' | 'email' | 'password', label: string) => {
     const isFocused = focusedField === field;
     return (
@@ -139,15 +123,12 @@ const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'passwo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Animated Backdrop */}
       <div 
         className="absolute inset-0 bg-gradient-to-br from-[#1A0F0A]/80 via-[#8B3A1A]/60 to-[#D4AF37]/40 backdrop-blur-sm"
         onClick={onClose}
       />
       
-      {/* Animated Modal */}
       <div className="relative bg-gradient-to-br from-[#F5EFE6] to-[#E8DCD0] w-full max-w-md p-8 rounded-2xl shadow-2xl animate-fadeInUp border border-[#D4AF37]/20">
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-[#1A0F0A] transition-all duration-300 hover:rotate-90"
@@ -155,7 +136,6 @@ const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'passwo
           <X size={20} />
         </button>
 
-        {/* Header with Animation */}
         <div className="text-center mb-8 animate-slideDown">
           <div className="w-16 h-1 bg-gradient-to-r from-[#D4AF37] to-[#8B3A1A] mx-auto mb-4 rounded-full" />
           <h2 className="text-3xl font-serif font-light text-[#1A0F0A] mb-2">
@@ -267,7 +247,6 @@ const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'passwo
           </button>
         </div>
 
-        {/* Keyboard navigation hint */}
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-400">
             Use <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">↑</kbd> <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">↓</kbd> to navigate
