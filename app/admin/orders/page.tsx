@@ -1,21 +1,28 @@
-// app/admin/orders/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Search, ChevronDown, Eye } from 'lucide-react';
 
 interface Order {
   id: number;
   order_number: string;
   customer_name: string;
   customer_email: string;
+  customer_phone: string;
   total_amount: number;
   status: string;
   created_at: string;
-  items: any[];
+  items: Array<{
+    product_name: string;
+    quantity: number;
+    price: number;
+  }>;
 }
 
 export default function AdminOrders() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -28,8 +35,10 @@ export default function AdminOrders() {
   const fetchOrders = async () => {
     try {
       const response = await fetch('/api/admin/orders');
-      const data = await response.json();
-      setOrders(data.orders);
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data.orders || []);
+      }
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {
@@ -39,12 +48,16 @@ export default function AdminOrders() {
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
     try {
-      await fetch('/api/admin/orders', {
+      const response = await fetch('/api/admin/orders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId, status: newStatus }),
       });
-      fetchOrders();
+      if (response.ok) {
+        fetchOrders();
+      } else {
+        alert('Failed to update order status');
+      }
     } catch (error) {
       console.error('Error updating order:', error);
     }
@@ -52,8 +65,10 @@ export default function AdminOrders() {
 
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
-    const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customer_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = 
+      order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (order.customer_email && order.customer_email.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesStatus && matchesSearch;
   });
 
@@ -80,6 +95,9 @@ export default function AdminOrders() {
           <h1 className="text-3xl font-serif text-[#1A0F0A]">Orders</h1>
           <p className="text-gray-600">Manage customer orders</p>
         </div>
+        <div className="text-sm bg-[#8B3A1A] text-white px-4 py-2 rounded-lg">
+          Total: {orders.length} orders
+        </div>
       </div>
 
       {/* Filters */}
@@ -90,7 +108,7 @@ export default function AdminOrders() {
               <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search orders..."
+                placeholder="Search by order #, customer name, or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
@@ -123,6 +141,7 @@ export default function AdminOrders() {
               <tr className="bg-gray-50 border-b">
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Order #</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Customer</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Products</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Total</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Status</th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Date</th>
@@ -130,47 +149,75 @@ export default function AdminOrders() {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4 text-sm font-medium text-[#8B3A1A]">
-                    #{order.order_number}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm font-medium">{order.customer_name}</div>
-                    <div className="text-xs text-gray-500">{order.customer_email}</div>
-                  </td>
-                  <td className="py-3 px-4 text-sm font-semibold">
-                    Rs. {order.total_amount.toLocaleString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                      className={`px-2 py-1 rounded-full text-xs font-medium border-0 ${statusColors[order.status]}`}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-500">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => {
-                        // Show order details modal
-                        alert(JSON.stringify(order, null, 2));
-                      }}
-                      className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-sm"
-                    >
-                      View Details
-                    </button>
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-8 text-gray-500">
+                    No orders found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr key={order.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4 text-sm font-medium text-[#8B3A1A]">
+                      #{order.order_number}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm font-medium text-[#1A0F0A]">
+                        {order.customer_name || 'Guest'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {order.customer_email || 'No email'}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-gray-600">
+                        {order.items && order.items.length > 0 ? (
+                          <div>
+                            {order.items.map((item, index) => (
+                              <span key={index}>
+                                {item.product_name}
+                                {index < order.items.length - 1 ? ', ' : ''}
+                              </span>
+                            ))}
+                            <span className="text-xs text-gray-400 ml-1">
+                              ({order.items.reduce((sum, i) => sum + i.quantity, 0)} items)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">No products</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm font-semibold text-[#8B3A1A]">
+                      Rs. {order.total_amount.toLocaleString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 ${statusColors[order.status]}`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="processing">Processing</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="py-3 px-4">
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-sm flex items-center gap-1"
+                      >
+                        <Eye size={16} /> View
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

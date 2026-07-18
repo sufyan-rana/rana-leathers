@@ -2,13 +2,32 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const orderId = params.id;
 
-    // Get order details
+    // Get order details with customer info
     const orderResult = await query(
-      `SELECT * FROM orders WHERE id = $1`,
+      `SELECT 
+        o.id, 
+        o.order_number, 
+        o.total_amount, 
+        o.status, 
+        o.created_at,
+        o.customer_name,
+        o.customer_email,
+        o.customer_phone,
+        o.customer_city,
+        o.customer_country,
+        o.customer_postal_code,
+        o.shipping_address,
+        o.payment_method,
+        o.order_notes
+      FROM orders o
+      WHERE o.id = $1`,
       [orderId]
     );
 
@@ -21,12 +40,21 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     const order = orderResult.rows[0];
 
-    // Get order items
+    // Get order items with product details
     const itemsResult = await query(
-      `SELECT oi.*, p.name as product_name, p.image_url 
-       FROM order_items oi
-       JOIN products p ON oi.product_id = p.id
-       WHERE oi.order_id = $1`,
+      `SELECT 
+        oi.id,
+        oi.product_id,
+        oi.quantity,
+        oi.price,
+        oi.size,
+        oi.color,
+        p.name as product_name,
+        p.image_url,
+        p.category
+      FROM order_items oi
+      LEFT JOIN products p ON oi.product_id = p.id
+      WHERE oi.order_id = $1`,
       [orderId]
     );
 

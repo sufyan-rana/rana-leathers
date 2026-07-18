@@ -14,19 +14,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate phone number (11 digits, starts with 03)
-    const phoneRegex = /^03\d{9}$/;
-    if (!phoneRegex.test(customer.phone.replace(/[\s\-\(\)]/g, ''))) {
-      return NextResponse.json(
-        { error: 'Please enter a valid 11-digit Pakistani phone number' },
-        { status: 400 }
-      );
-    }
-
     // Generate order number
     const orderNumber = `RANA-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
-    // Insert order with all fields including country, postalCode, and notes
+    // Insert order with all customer details
     const result = await query(
       `INSERT INTO orders (
         order_number, 
@@ -68,7 +59,7 @@ export async function POST(request: Request) {
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           orderId,
-          item.id || item.product_id,
+          item.id,
           item.quantity,
           item.price,
           item.size || null,
@@ -87,33 +78,6 @@ export async function POST(request: Request) {
     console.error('Order creation error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to create order' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const orderNumber = searchParams.get('orderNumber');
-
-    if (orderNumber) {
-      const result = await query(
-        `SELECT * FROM orders WHERE order_number = $1`,
-        [orderNumber]
-      );
-      return NextResponse.json({ order: result.rows[0] || null });
-    }
-
-    const result = await query(
-      `SELECT * FROM orders ORDER BY created_at DESC LIMIT 50`
-    );
-    return NextResponse.json({ orders: result.rows });
-
-  } catch (error: any) {
-    console.error('Error fetching orders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
       { status: 500 }
     );
   }
