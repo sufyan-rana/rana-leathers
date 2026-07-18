@@ -3,6 +3,7 @@
 import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag, Minus, Plus, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/store/cartStore";
@@ -88,6 +89,7 @@ const products: Record<string, any> = {
 };
 
 export default function ProductDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
   const product = products[slug];
@@ -97,31 +99,31 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState("");
   const [addedToCart, setAddedToCart] = useState(false);
 
-  // Get the addItem function from the cart store
   const addItemToCart = useCartStore((state) => state.addItem);
 
   if (!product) {
     notFound();
   }
 
-    const handleAddToCart = () => {
-         addItemToCart({
-         id: product.id,
-         name: product.name,
-         price: product.price,
-         quantity: quantity,
-         image: product.image,
-         slug: product.slug,
-         size: selectedSize,
-         color: selectedColor,
-     });
-  
+  const handleAddToCart = () => {
+    addItemToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: product.image,
+      slug: product.slug,
+      size: selectedSize,
+      color: selectedColor,
+    });
+    
     setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
-  
-  // Show a toast or notification
-     alert(`${product.name} added to cart!`);
-};
+    
+    // Navigate to cart page after adding
+    setTimeout(() => {
+      router.push('/cart');
+    }, 300);
+  };
 
   return (
     <div className="container-custom py-12">

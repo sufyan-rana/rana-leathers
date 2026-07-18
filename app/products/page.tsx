@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 
@@ -80,11 +81,11 @@ const getCategoryIcon = (category: string) => {
 };
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [category, setCategory] = useState("all");
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const [addedProduct, setAddedProduct] = useState<number | null>(null);
   
-  // Get the addItem function from cart store
   const addItemToCart = useCartStore((state) => state.addItem);
   
   const filteredProducts = category === "all" 
@@ -96,8 +97,8 @@ export default function ProductsPage() {
   };
 
   const handleAddToCart = (e: React.MouseEvent, product: typeof products[0]) => {
-    e.preventDefault(); // Prevent navigation to product detail
-    e.stopPropagation(); // Stop event bubbling
+    e.preventDefault();
+    e.stopPropagation();
     
     addItemToCart({
       id: product.id,
@@ -111,8 +112,8 @@ export default function ProductsPage() {
     setAddedProduct(product.id);
     setTimeout(() => setAddedProduct(null), 2000);
     
-    // Show feedback
-    alert(`${product.name} added to cart! 🛒`);
+    // Navigate to cart page
+    router.push('/cart');
   };
 
   return (
@@ -120,7 +121,6 @@ export default function ProductsPage() {
       <h1 className="text-3xl md:text-4xl font-serif font-light text-[#1A0F0A] text-center mb-4">Our Products</h1>
       <div className="w-12 h-px bg-[#D4AF37] mx-auto mb-8"></div>
       
-      {/* Category Filter */}
       <div className="flex flex-wrap justify-center gap-2 mb-12">
         {categories.map((cat) => (
           <button
@@ -137,7 +137,6 @@ export default function ProductsPage() {
         ))}
       </div>
       
-      {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((product) => (
           <div key={product.id} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition group">
@@ -177,18 +176,11 @@ export default function ProductsPage() {
                   </div>
                   <button 
                     onClick={(e) => handleAddToCart(e, product)}
-                    className={`p-2 rounded-full transition ${
-                      addedProduct === product.id 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-[#8B3A1A] text-white hover:bg-[#1A0F0A]'
-                    }`}
+                    className="bg-[#8B3A1A] text-white p-2 rounded-full hover:bg-[#1A0F0A] transition"
                   >
                     <ShoppingBag size={18} />
                   </button>
                 </div>
-                {addedProduct === product.id && (
-                  <p className="text-green-600 text-xs text-center mt-2 font-medium">✓ Added to cart!</p>
-                )}
               </div>
             </Link>
           </div>

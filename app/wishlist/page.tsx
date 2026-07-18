@@ -1,8 +1,8 @@
 ﻿'use client';
 
-
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag, Trash2, Check } from "lucide-react";
 import { useCartStore } from "@/store/cartStore";
 
@@ -16,6 +16,7 @@ const initialWishlist = [
 ];
 
 export default function WishlistPage() {
+  const router = useRouter();
   const [wishlist, setWishlist] = useState(initialWishlist);
   const [addedToCartId, setAddedToCartId] = useState<number | null>(null);
   const { addItem } = useCartStore();
@@ -35,7 +36,11 @@ export default function WishlistPage() {
     });
     
     setAddedToCartId(item.id);
-    setTimeout(() => setAddedToCartId(null), 2000);
+    
+    // Navigate to cart page
+    setTimeout(() => {
+      router.push('/cart');
+    }, 300);
   };
 
   if (wishlist.length === 0) {
@@ -88,8 +93,8 @@ export default function WishlistPage() {
               </Link>
               <div className="flex items-center mt-2 mb-2">
                 <div className="flex text-yellow-500">
-                  {"â˜…".repeat(Math.floor(item.rating))}
-                  {"â˜†".repeat(5 - Math.floor(item.rating))}
+                  {"★".repeat(Math.floor(item.rating))}
+                  {"☆".repeat(5 - Math.floor(item.rating))}
                 </div>
                 <span className="text-xs text-gray-500 ml-2">({item.rating})</span>
               </div>
@@ -118,7 +123,7 @@ export default function WishlistPage() {
       
       <div className="text-center mt-8">
         <Link href="/products" className="text-[#8B3A1A] hover:text-[#D4AF37] transition">
-          Continue Shopping â†’
+          Continue Shopping →
         </Link>
       </div>
     </div>
