@@ -11,8 +11,8 @@ export default function LoginPage() {
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(true);
 
-  // If user is already logged in, redirect to home or checkout
   useEffect(() => {
+    // If user is already logged in, redirect to home or checkout
     if (user) {
       const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
       sessionStorage.removeItem('redirectAfterLogin');
@@ -32,7 +32,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5EFE6]">
+    <div className="min-h-screen bg-[#F5EFE6] flex items-center justify-center">
       <LoginModal 
         isOpen={isModalOpen} 
         onClose={handleClose}

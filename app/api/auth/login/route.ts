@@ -27,14 +27,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify password - handle both bcrypt hashes and plain text (for backward compatibility)
+    // Verify password
     let isValid = false;
-    
     try {
-      // Try bcrypt compare
       isValid = await bcrypt.compare(password, user.password);
     } catch (error) {
-      // If bcrypt fails, try direct comparison (for old records)
       isValid = password === user.password;
     }
 
@@ -47,17 +44,22 @@ export async function POST(request: Request) {
 
     // Create token
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, role: user.role || 'user' },
+      { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        role: user.role || 'user' 
+      },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
-    // Set cookie
+    // Set cookie with proper settings
     cookies().set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
 

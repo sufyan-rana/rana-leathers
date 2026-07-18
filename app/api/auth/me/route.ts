@@ -1,8 +1,8 @@
+// app/api/auth/me/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-
-let users: any[] = [];
+import { query } from '@/lib/db';
 
 export async function GET() {
   try {
@@ -13,15 +13,15 @@ export async function GET() {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    const user = users.find(u => u.id === decoded.id);
-
-    if (!user) {
+    const result = await query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+    
+    if (result.rows.length === 0) {
       return NextResponse.json({ user: null });
     }
 
-    const { password, ...userWithoutPassword } = user;
-    return NextResponse.json({ user: userWithoutPassword });
+    return NextResponse.json({ user: result.rows[0] });
   } catch (error) {
+    console.error('Auth me error:', error);
     return NextResponse.json({ user: null });
   }
 }

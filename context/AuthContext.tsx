@@ -2,6 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -22,6 +23,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = async () => {
     try {
       const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (data.user) {
-        setUser(data.user);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user) {
+          setUser(data.user);
+        }
       }
     } catch (error) {
       console.error('Auth check error:', error);
@@ -55,9 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
-        // Redirect to stored redirect URL or home
+        // Get redirect URL or default to home
         const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
         sessionStorage.removeItem('redirectAfterLogin');
+        // Use window.location for full page reload to ensure state is fresh
         window.location.href = redirectUrl;
         return { success: true };
       }
@@ -77,10 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
-        // After registration, redirect to login page or home
-        const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
-        sessionStorage.removeItem('redirectAfterLogin');
-        window.location.href = redirectUrl;
+        // After registration, redirect to home
+        window.location.href = '/';
         return { success: true };
       }
       return { success: false, error: data.error || 'Registration failed' };
