@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 
 export async function GET() {
   try {
+    // Get ALL orders - no user_id filter
     const result = await query(`
       SELECT 
         o.id, 
@@ -17,12 +18,15 @@ export async function GET() {
         o.customer_city,
         o.shipping_address,
         o.payment_method,
-        json_agg(
-          json_build_object(
-            'product_name', p.name,
-            'quantity', oi.quantity,
-            'price', oi.price
-          )
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'product_name', p.name,
+              'quantity', oi.quantity,
+              'price', oi.price
+            )
+          ) FILTER (WHERE p.id IS NOT NULL),
+          '[]'
         ) as items
       FROM orders o
       LEFT JOIN order_items oi ON o.id = oi.order_id
@@ -41,8 +45,6 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const { orderId, status } = await request.json();
-
-    console.log('Updating order:', { orderId, status });
 
     if (!orderId || !status) {
       return NextResponse.json(
@@ -66,13 +68,7 @@ export async function PUT(request: Request) {
       [status, orderId]
     );
 
-    // Get updated order
-    const updated = await query('SELECT id, status FROM orders WHERE id = $1', [orderId]);
-
-    return NextResponse.json({ 
-      success: true, 
-      order: updated.rows[0] 
-    });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error updating order:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
