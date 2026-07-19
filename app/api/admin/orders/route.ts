@@ -47,6 +47,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const { orderId, status } = await request.json();
+   console.log('updating order:', { orderId, staus });
 
     if (!orderId || !status) {
       return NextResponse.json(

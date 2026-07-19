@@ -45,23 +45,30 @@ export default function AdminOrders() {
       setLoading(false);
     }
   };
-
-  const updateOrderStatus = async (orderId: number, newStatus: string) => {
-    try {
-      const response = await fetch('/api/admin/orders', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status: newStatus }),
-      });
-      if (response.ok) {
-        fetchOrders();
-      } else {
-        alert('Failed to update order status');
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
+     
+    const updateOrderStatus = async (orderId: number, newStatus: string) => {
+  try {
+    const response = await fetch('/api/admin/orders', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, status: newStatus }),
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      // Refresh orders list
+      fetchOrders();
+      // Show success message
+      alert(`Order status updated to ${newStatus}`);
+    } else {
+      alert(data.error || 'Failed to update order status');
     }
-  };
+  } catch (error) {
+    console.error('Error updating order:', error);
+    alert('Something went wrong');
+  }
+};
 
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
