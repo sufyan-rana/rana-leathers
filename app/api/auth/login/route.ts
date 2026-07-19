@@ -27,11 +27,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify password
+    // Verify password - try bcrypt first, fallback to plain text
     let isValid = false;
     try {
       isValid = await bcrypt.compare(password, user.password);
     } catch (error) {
+      // If bcrypt fails, try direct comparison
       isValid = password === user.password;
     }
 
@@ -54,12 +55,12 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     );
 
-    // Set cookie with proper settings
+    // Set cookie
     cookies().set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 7 * 24 * 60 * 60,
       path: '/',
     });
 

@@ -1,8 +1,6 @@
-// context/AuthContext.tsx
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -23,11 +21,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check auth on mount
   useEffect(() => {
     checkAuth();
   }, []);
@@ -42,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Auth check error:', error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -59,11 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
-        // Get redirect URL or default to home
-        const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
-        sessionStorage.removeItem('redirectAfterLogin');
-        // Use window.location for full page reload to ensure state is fresh
-        window.location.href = redirectUrl;
         return { success: true };
       }
       return { success: false, error: data.error || 'Login failed' };
@@ -82,8 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       if (res.ok) {
         setUser(data.user);
-        // After registration, redirect to home
-        window.location.href = '/';
         return { success: true };
       }
       return { success: false, error: data.error || 'Registration failed' };

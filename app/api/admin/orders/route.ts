@@ -15,19 +15,13 @@ export async function GET() {
         o.customer_email,
         o.customer_phone,
         o.customer_city,
-        o.customer_country,
         o.shipping_address,
         o.payment_method,
-        o.order_notes,
         json_agg(
           json_build_object(
-            'product_id', oi.product_id,
             'product_name', p.name,
             'quantity', oi.quantity,
-            'price', oi.price,
-            'size', oi.size,
-            'color', oi.color,
-            'image', p.image_url
+            'price', oi.price
           )
         ) as items
       FROM orders o
@@ -47,7 +41,8 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const { orderId, status } = await request.json();
-   console.log('updating order:', { orderId, status });
+
+    console.log('Updating order:', { orderId, status });
 
     if (!orderId || !status) {
       return NextResponse.json(
@@ -71,7 +66,13 @@ export async function PUT(request: Request) {
       [status, orderId]
     );
 
-    return NextResponse.json({ success: true });
+    // Get updated order
+    const updated = await query('SELECT id, status FROM orders WHERE id = $1', [orderId]);
+
+    return NextResponse.json({ 
+      success: true, 
+      order: updated.rows[0] 
+    });
   } catch (error: any) {
     console.error('Error updating order:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

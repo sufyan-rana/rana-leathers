@@ -43,10 +43,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
+  try {
     let result;
     if (isLogin) {
       result = await login(email, password);
@@ -62,11 +63,19 @@ export default function LoginModal({ isOpen, onClose, onSuccess }: LoginModalPro
     if (result.success) {
       onClose();
       if (onSuccess) onSuccess();
+      // Redirect after successful login
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/';
+      sessionStorage.removeItem('redirectAfterLogin');
+      window.location.href = redirectUrl;
     } else {
       setError(result.error || 'Something went wrong');
     }
+  } catch (error) {
+    setError('Something went wrong. Please try again.');
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   const handleKeyDown = (e: React.KeyboardEvent, field: 'name' | 'email' | 'password') => {
     if (e.key === 'Enter') {
