@@ -49,7 +49,6 @@ export default function AdminOrders() {
   };
 
   const updateOrderStatus = async (orderId: number, newStatus: string) => {
-    // Set updating state for this order
     setUpdating(orderId);
 
     try {
@@ -62,7 +61,6 @@ export default function AdminOrders() {
       const data = await response.json();
       
       if (response.ok) {
-        // Fetch fresh orders data
         await fetchOrders();
         alert(`✅ Order status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`);
       } else {
@@ -117,7 +115,6 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
         <div className="flex flex-wrap gap-4">
           <div className="flex-1 min-w-[200px]">
@@ -150,7 +147,6 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">

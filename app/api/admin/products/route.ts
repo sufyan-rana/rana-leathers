@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const result = await query(`
       SELECT id, name, price, original_price, description, category, 
-             image_url, rating, in_stock, features, sizes, colors, slug
+             image_url, images, rating, in_stock, features, sizes, colors, slug
       FROM products 
       ORDER BY id DESC
     `);
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { 
       name, price, originalPrice, description, category, 
-      image_url, features, sizes, colors, in_stock 
+      image_url, images, features, sizes, colors, in_stock 
     } = body;
 
     if (!name || !price || !category) {
@@ -35,11 +35,13 @@ export async function POST(request: Request) {
     }
 
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+    const productImages = images && images.length > 0 ? images : [image_url || '/images/products/jacket.jpg'];
+    const mainImage = productImages[0] || '/images/products/jacket.jpg';
 
     const result = await query(
       `INSERT INTO products (name, price, original_price, description, category, 
-        image_url, features, sizes, colors, in_stock, slug)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        image_url, images, features, sizes, colors, in_stock, slug)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         name,
@@ -47,7 +49,8 @@ export async function POST(request: Request) {
         originalPrice || null,
         description || null,
         category,
-        image_url || '/images/products/jacket.jpg',
+        mainImage,
+        productImages,
         features || [],
         sizes || [],
         colors || [],
@@ -69,7 +72,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { 
       id, name, price, originalPrice, description, category, 
-      image_url, features, sizes, colors, in_stock 
+      image_url, images, features, sizes, colors, in_stock 
     } = body;
 
     if (!id) {
@@ -89,13 +92,15 @@ export async function PUT(request: Request) {
     }
 
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '');
+    const productImages = images && images.length > 0 ? images : [image_url || '/images/products/jacket.jpg'];
+    const mainImage = productImages[0] || '/images/products/jacket.jpg';
 
     const result = await query(
       `UPDATE products 
        SET name = $1, price = $2, original_price = $3, description = $4, 
-           category = $5, image_url = $6, features = $7, sizes = $8, 
-           colors = $9, in_stock = $10, slug = $11
-       WHERE id = $12
+           category = $5, image_url = $6, images = $7, features = $8, 
+           sizes = $9, colors = $10, in_stock = $11, slug = $12
+       WHERE id = $13
        RETURNING *`,
       [
         name,
@@ -103,7 +108,8 @@ export async function PUT(request: Request) {
         originalPrice || null,
         description || null,
         category,
-        image_url || '/images/products/jacket.jpg',
+        mainImage,
+        productImages,
         features || [],
         sizes || [],
         colors || [],

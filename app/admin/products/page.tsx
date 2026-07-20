@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, Eye, X, Check } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, X, Check, Upload, Image as ImageIcon } from 'lucide-react';
 
 interface Product {
   id: number;
@@ -12,6 +12,7 @@ interface Product {
   category: string;
   in_stock: boolean;
   image_url: string;
+  images: string[];
   slug: string;
   description: string;
   features: string[];
@@ -24,6 +25,9 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [imagePreview, setImagePreview] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -35,6 +39,7 @@ export default function AdminProducts() {
     colors: '',
     in_stock: true,
     image_url: '',
+    images: [] as string[],
   });
 
   useEffect(() => {
@@ -62,12 +67,13 @@ export default function AdminProducts() {
       const response = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
       if (response.ok) {
         fetchProducts();
+        alert('✅ Product deleted successfully');
       } else {
-        alert('Failed to delete product');
+        alert('❌ Failed to delete product');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('Something went wrong');
+      alert('❌ Something went wrong');
     }
   };
 
@@ -83,13 +89,34 @@ export default function AdminProducts() {
       sizes: product.sizes?.join(', ') || '',
       colors: product.colors?.join(', ') || '',
       in_stock: product.in_stock !== false,
-      image_url: product.image_url || '',
+      image_url: '',
+      images: product.images || [product.image_url || ''],
     });
+    setImagePreview(product.images || [product.image_url || '']);
     setShowAddModal(true);
+  };
+
+  const handleImageUrlAdd = () => {
+    if (formData.image_url && !formData.images.includes(formData.image_url)) {
+      setFormData({
+        ...formData,
+        images: [...formData.images, formData.image_url],
+      });
+      setImagePreview([...imagePreview, formData.image_url]);
+      setFormData({ ...formData, image_url: '' });
+    }
+  };
+
+  const handleImageRemove = (index: number) => {
+    const newImages = formData.images.filter((_, i) => i !== index);
+    setFormData({ ...formData, images: newImages });
+    setImagePreview(newImages);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploading(true);
+    
     try {
       const payload = {
         ...formData,
@@ -99,41 +126,38 @@ export default function AdminProducts() {
         sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean),
         colors: formData.colors.split(',').map(s => s.trim()).filter(Boolean),
         in_stock: formData.in_stock,
+        images: formData.images.length > 0 ? formData.images : [formData.image_url || '/images/products/jacket.jpg'],
+        image_url: formData.images.length > 0 ? formData.images[0] : (formData.image_url || '/images/products/jacket.jpg'),
       };
 
+      let response;
       if (editingProduct) {
-        // Update existing product
-        const response = await fetch('/api/admin/products', {
+        response = await fetch('/api/admin/products', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...payload, id: editingProduct.id }),
         });
-        if (response.ok) {
-          fetchProducts();
-          setShowAddModal(false);
-          setEditingProduct(null);
-          resetForm();
-        } else {
-          alert('Failed to update product');
-        }
       } else {
-        // Create new product
-        const response = await fetch('/api/admin/products', {
+        response = await fetch('/api/admin/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (response.ok) {
-          fetchProducts();
-          setShowAddModal(false);
-          resetForm();
-        } else {
-          alert('Failed to create product');
-        }
+      }
+
+      if (response.ok) {
+        fetchProducts();
+        setShowAddModal(false);
+        resetForm();
+        alert(editingProduct ? '✅ Product updated successfully' : '✅ Product added successfully');
+      } else {
+        alert('❌ Failed to save product');
       }
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Something went wrong');
+      alert('❌ Something went wrong');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -149,7 +173,9 @@ export default function AdminProducts() {
       colors: '',
       in_stock: true,
       image_url: '',
+      images: [],
     });
+    setImagePreview([]);
     setEditingProduct(null);
   };
 
@@ -356,6 +382,48 @@ export default function AdminProducts() {
                 </div>
               </div>
 
+              {/* Image Upload Section */}
+              <div className="border rounded-lg p-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    placeholder="Enter image URL"
+                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleImageUrlAdd}
+                    className="bg-[#8B3A1A] text-white px-4 py-2 rounded-lg hover:bg-[#1A0F0A] transition"
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                {/* Image Previews */}
+                {imagePreview.length > 0 && (
+                  <div className="flex flex-wrap gap-3 mt-3">
+                    {imagePreview.map((img, index) => (
+                      <div key={index} className="relative w-20 h-20 border rounded-lg overflow-hidden group">
+                        <img src={img} alt={`Product ${index + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleImageRemove(index)}
+                          className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mt-2">
+                  Add image URLs for product photos. First image will be the main image.
+                </p>
+              </div>
+
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -371,9 +439,10 @@ export default function AdminProducts() {
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  className="bg-[#8B3A1A] text-white px-6 py-2 rounded-lg hover:bg-[#1A0F0A] transition"
+                  disabled={uploading}
+                  className="bg-[#8B3A1A] text-white px-6 py-2 rounded-lg hover:bg-[#1A0F0A] transition disabled:opacity-50"
                 >
-                  {editingProduct ? 'Update Product' : 'Add Product'}
+                  {uploading ? 'Saving...' : (editingProduct ? 'Update Product' : 'Add Product')}
                 </button>
                 <button
                   type="button"
