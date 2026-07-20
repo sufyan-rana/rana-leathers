@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import { query } from '@/lib/db';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-24.dahlia', // Correct latest stable version
+  apiVersion: '2026-06-24.dahlia', // Correct version
 });
 
 export async function GET(request: Request) {
@@ -19,11 +19,9 @@ export async function GET(request: Request) {
       );
     }
 
-    // Retrieve the session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status === 'paid') {
-      // Update order status in database
       const orderNumber = session.metadata?.orderNumber;
       if (orderNumber) {
         await query(
