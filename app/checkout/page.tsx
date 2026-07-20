@@ -15,32 +15,26 @@ import {
   CheckCircle,
   AlertCircle,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Smartphone,
+  Landmark
 } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
 
-// Country lists
-const asianCountries = [
+// Countries
+const allCountries = [
   'Pakistan', 'India', 'China', 'Japan', 'South Korea', 
   'Indonesia', 'Malaysia', 'Singapore', 'Thailand', 'Vietnam',
   'Philippines', 'Bangladesh', 'Sri Lanka', 'Nepal', 'Afghanistan',
-  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain'
-];
-
-const europeanCountries = [
+  'UAE', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Oman', 'Bahrain',
   'United Kingdom', 'Germany', 'France', 'Italy', 'Spain',
-  'Netherlands', 'Switzerland', 'Sweden', 'Norway', 'Denmark',
-  'Finland', 'Belgium', 'Austria', 'Greece', 'Portugal',
-  'Ireland', 'Poland', 'Czech Republic', 'Hungary', 'Romania'
-];
+  'Netherlands', 'Switzerland', 'Sweden', 'Norway', 'Denmark'
+].sort();
 
-const allCountries = [...asianCountries, ...europeanCountries].sort();
-
-// Pakistani Cities
 const pakistaniCities = [
   'Karachi', 'Lahore', 'Islamabad', 'Rawalpindi', 'Faisalabad',
   'Multan', 'Hyderabad', 'Gujranwala', 'Peshawar', 'Quetta',
-  'Sialkot', 'Sargodha', 'Bahawalpur', 'Sukkur', 'Larkana',
-  'Mingora', 'Mardan', 'Gujrat', 'Kasur', 'Rahim Yar Khan'
+  'Sialkot', 'Sargodha', 'Bahawalpur', 'Sukkur', 'Larkana'
 ];
 
 export default function CheckoutPage() {
@@ -53,6 +47,7 @@ export default function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState('');
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCardForm, setShowCardForm] = useState(false);
   
   const [formData, setFormData] = useState({
     fullName: user?.name || '',
@@ -66,6 +61,15 @@ export default function CheckoutPage() {
   });
 
   const [selectedPayment, setSelectedPayment] = useState('easypaisa');
+
+  // Card form state
+  const [cardData, setCardData] = useState({
+    cardNumber: '',
+    cardName: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvc: '',
+  });
 
   useEffect(() => {
     if (!user) {
@@ -82,55 +86,89 @@ export default function CheckoutPage() {
   const shipping = subtotal > 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
-  // Phone validation for Pakistani numbers
+  // Payment Methods
+  const paymentMethods = [
+    {
+      id: 'easypaisa',
+      name: 'EasyPaisa',
+      icon: <Smartphone className="text-green-600" size={24} />,
+      description: 'Pay with EasyPaisa mobile account',
+      details: [
+        { label: 'Account Number', value: '0345-1234567' },
+        { label: 'Account Title', value: 'RANA LEATHER\'S' },
+        { label: 'Reference', value: 'Order # + Your Name' },
+      ],
+      link: 'https://easypaisa.com.pk/',
+    },
+    {
+      id: 'jazzcash',
+      name: 'JazzCash',
+      icon: <Smartphone className="text-orange-500" size={24} />,
+      description: 'Pay with JazzCash mobile account',
+      details: [
+        { label: 'Account Number', value: '0321-7654321' },
+        { label: 'Account Title', value: 'RANA LEATHER\'S' },
+        { label: 'Reference', value: 'Order # + Your Name' },
+      ],
+      link: 'https://jazzcash.com.pk/',
+    },
+    {
+      id: 'bank',
+      name: 'Bank Transfer',
+      icon: <Landmark className="text-blue-600" size={24} />,
+      description: 'Direct bank transfer',
+      details: [
+        { label: 'Bank', value: 'Meezan Bank' },
+        { label: 'Account Title', value: 'RANA LEATHER\'S' },
+        { label: 'Account Number', value: '1234-5678901-2' },
+        { label: 'Branch', value: 'Sialkot, Pakistan' },
+        { label: 'IBAN', value: 'PK99MEZN0012345678901234' },
+      ],
+      link: '#',
+    },
+    {
+      id: 'card',
+      name: 'Credit / Debit Card',
+      icon: <CreditCard className="text-purple-600" size={24} />,
+      description: 'Pay securely with card',
+      details: [],
+      link: '#',
+    },
+    {
+      id: 'cod',
+      name: 'Cash on Delivery',
+      icon: <Wallet className="text-yellow-600" size={24} />,
+      description: 'Pay when you receive',
+      details: [
+        { label: 'Payment', value: 'Cash on Delivery' },
+        { label: 'Availability', value: 'Nationwide' },
+        { label: 'Extra Charges', value: 'None' },
+      ],
+      link: '#',
+    },
+  ];
+
   const validatePhone = (phone: string) => {
-    // Remove spaces and special characters
     const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-    // Must be 11 digits and start with 03
     const phoneRegex = /^03\d{9}$/;
     return phoneRegex.test(cleaned);
-  };
-
-  // Postal code validation (Pakistan 5 digits)
-  const validatePostalCode = (code: string) => {
-    const postalRegex = /^\d{5}$/;
-    return postalRegex.test(code);
   };
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.fullName?.trim()) {
-      newErrors.fullName = 'Full name is required';
-    }
-
-    if (!formData.email?.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.fullName?.trim()) newErrors.fullName = 'Full name is required';
+    if (!formData.email?.trim()) newErrors.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-
-    if (!formData.phone?.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!validatePhone(formData.phone)) {
+    if (!formData.phone?.trim()) newErrors.phone = 'Phone number is required';
+    else if (!validatePhone(formData.phone)) {
       newErrors.phone = 'Please enter a valid 11-digit Pakistani phone number (03XX-XXXXXXX)';
     }
-
-    if (!formData.address?.trim()) {
-      newErrors.address = 'Address is required';
-    }
-
-    if (!formData.city?.trim()) {
-      newErrors.city = 'City is required';
-    }
-
-    if (!formData.country?.trim()) {
-      newErrors.country = 'Country is required';
-    }
-
-    if (formData.postalCode && !validatePostalCode(formData.postalCode)) {
-      newErrors.postalCode = 'Postal code must be 5 digits';
-    }
+    if (!formData.address?.trim()) newErrors.address = 'Address is required';
+    if (!formData.city?.trim()) newErrors.city = 'City is required';
+    if (!formData.country?.trim()) newErrors.country = 'Country is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -139,18 +177,12 @@ export default function CheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    
-    // Clear error for this field when user types
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
+    if (errors[name]) setErrors({ ...errors, [name]: '' });
   };
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 11) value = value.slice(0, 11);
-    setFormData({ ...formData, phone: value });
-    if (errors.phone) setErrors({ ...errors, phone: '' });
+  const handleCardInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setCardData({ ...cardData, [name]: value });
   };
 
   const handleNextStep = () => {
@@ -160,9 +192,93 @@ export default function CheckoutPage() {
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!validateStep1()) return;
+  // Handle Card Payment with Stripe
+  const handleCardPayment = async () => {
+    if (!cardData.cardNumber || !cardData.cardName || !cardData.expiryMonth || !cardData.expiryYear || !cardData.cvc) {
+      alert('Please fill in all card details');
+      return;
+    }
 
+    setLoading(true);
+    try {
+      // Create order first
+      const orderItems = items.map(item => ({
+        id: Number(item.id) || 0,
+        name: item.name || 'Unknown Product',
+        price: Number(item.price) || 0,
+        quantity: Number(item.quantity) || 1,
+        size: item.size || null,
+        color: item.color || null,
+      }));
+
+      const orderResponse = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: orderItems,
+          subtotal: Number(subtotal),
+          shipping: Number(shipping),
+          total: Number(total),
+          customer: {
+            fullName: formData.fullName.trim(),
+            email: formData.email.trim(),
+            phone: formData.phone.trim(),
+            address: formData.address.trim(),
+            city: formData.city.trim(),
+            country: formData.country.trim(),
+            postalCode: formData.postalCode.trim(),
+            notes: formData.notes?.trim() || '',
+          },
+          paymentMethod: 'card',
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok) {
+        alert(orderData.error || 'Failed to create order');
+        setLoading(false);
+        return;
+      }
+
+      // Initialize Stripe
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+      if (!stripe) {
+        alert('Stripe failed to load. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Create Stripe checkout session
+      const stripeResponse = await fetch('/api/payment/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: orderItems,
+          orderNumber: orderData.orderNumber,
+          customerEmail: formData.email,
+          customerName: formData.fullName,
+        }),
+      });
+
+      const { sessionId } = await stripeResponse.json();
+
+      // Redirect to Stripe checkout
+      const { error } = await stripe.redirectToCheckout({ sessionId });
+      if (error) {
+        alert('Payment failed: ' + error.message);
+        setLoading(false);
+      }
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('Something went wrong. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  // Handle EasyPaisa/JazzCash/Cash on Delivery
+  const handlePayment = async () => {
     setLoading(true);
     try {
       const orderItems = items.map(item => ({
@@ -173,12 +289,6 @@ export default function CheckoutPage() {
         size: item.size || null,
         color: item.color || null,
       }));
-
-      if (orderItems.length === 0) {
-        alert('Your cart is empty.');
-        setLoading(false);
-        return;
-      }
 
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -220,6 +330,14 @@ export default function CheckoutPage() {
     }
   };
 
+  const handlePlaceOrder = () => {
+    if (selectedPayment === 'card') {
+      handleCardPayment();
+    } else {
+      handlePayment();
+    }
+  };
+
   if (orderComplete) {
     return (
       <div className="container-custom py-12 max-w-2xl">
@@ -233,9 +351,26 @@ export default function CheckoutPage() {
             <p className="text-sm text-gray-600">Order Number</p>
             <p className="text-xl font-bold text-[#8B3A1A]">{orderNumber}</p>
           </div>
-          <Link href="/products" className="bg-[#8B3A1A] text-white px-6 py-2 rounded-lg hover:bg-[#1A0F0A] transition inline-block">
-            Continue Shopping
-          </Link>
+          <div className="space-y-2 text-left mb-6">
+            <p className="text-sm text-gray-600">
+              <strong>Payment Method:</strong> {paymentMethods.find(p => p.id === selectedPayment)?.name}
+            </p>
+            <p className="text-sm text-gray-600">
+              <strong>Total Amount:</strong> Rs. {total.toLocaleString()}
+            </p>
+            {selectedPayment !== 'card' && selectedPayment !== 'cod' && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-700">
+                  Please send payment confirmation to info@ranaleathers.com
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-4 justify-center">
+            <Link href="/products" className="bg-[#8B3A1A] text-white px-6 py-2 rounded-lg hover:bg-[#1A0F0A] transition">
+              Continue Shopping
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -281,9 +416,7 @@ export default function CheckoutPage() {
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.fullName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${errors.fullName ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
                   {errors.fullName && <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>}
@@ -295,28 +428,23 @@ export default function CheckoutPage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
                   <input
                     type="text"
                     name="phone"
                     value={formData.phone}
-                    onChange={handlePhoneChange}
+                    onChange={handleInputChange}
                     placeholder="03XX-XXXXXXX"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
-                  <p className="text-gray-400 text-xs mt-1">Format: 03XX-XXXXXXX (11 digits)</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
@@ -324,9 +452,7 @@ export default function CheckoutPage() {
                     name="country"
                     value={formData.country}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.country ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${errors.country ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     {allCountries.map((country) => (
                       <option key={country} value={country}>{country}</option>
@@ -340,9 +466,7 @@ export default function CheckoutPage() {
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.city ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     <option value="">Select a city</option>
                     {pakistaniCities.map((city) => (
@@ -359,11 +483,8 @@ export default function CheckoutPage() {
                     value={formData.postalCode}
                     onChange={handleInputChange}
                     placeholder="e.g., 54000"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.postalCode ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
                   />
-                  {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>}
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
@@ -373,9 +494,7 @@ export default function CheckoutPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     placeholder="House #, Street, Area"
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37] ${errors.address ? 'border-red-500' : 'border-gray-300'}`}
                     required
                   />
                   {errors.address && <p className="text-red-500 text-xs mt-1">{errors.address}</p>}
@@ -415,63 +534,144 @@ export default function CheckoutPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {[
-                  { id: 'easypaisa', name: 'EasyPaisa', icon: <Wallet className="text-green-600" size={24} />, details: ['Account: 0345-1234567', 'Title: RANA LEATHER\'S'] },
-                  { id: 'jazzcash', name: 'JazzCash', icon: <Wallet className="text-orange-500" size={24} />, details: ['Account: 0321-7654321', 'Title: RANA LEATHER\'S'] },
-                  { id: 'bank', name: 'Bank Transfer', icon: <Building2 className="text-blue-600" size={24} />, details: ['Bank: Meezan Bank', 'Account: 1234-5678901-2'] },
-                  { id: 'cod', name: 'Cash on Delivery', icon: <CreditCard className="text-purple-600" size={24} />, details: ['Pay at delivery', 'Nationwide'] },
-                ].map((method) => (
+                {paymentMethods.map((method) => (
                   <button
                     key={method.id}
-                    onClick={() => setSelectedPayment(method.id)}
+                    onClick={() => {
+                      setSelectedPayment(method.id);
+                      setShowCardForm(method.id === 'card');
+                    }}
                     className={`p-4 border-2 rounded-xl text-left transition-all duration-300 ${
                       selectedPayment === method.id
                         ? 'border-[#D4AF37] bg-[#D4AF37]/5 shadow-md'
                         : 'border-gray-200 hover:border-[#D4AF37]/50'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {method.icon}
-                      <span className="font-medium text-[#1A0F0A] text-sm">{method.name}</span>
+                      <div>
+                        <p className="font-medium text-[#1A0F0A] text-sm">{method.name}</p>
+                        <p className="text-xs text-gray-500">{method.description}</p>
+                      </div>
                       {selectedPayment === method.id && <Check size={16} className="text-[#D4AF37] ml-auto" />}
                     </div>
                   </button>
                 ))}
               </div>
 
-              {selectedPayment && (
+              {/* Payment Details */}
+              {selectedPayment && selectedPayment !== 'card' && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <h3 className="font-semibold text-[#1A0F0A] mb-2 text-sm">
-                    {['EasyPaisa', 'JazzCash', 'Bank Transfer', 'Cash on Delivery'][['easypaisa','jazzcash','bank','cod'].indexOf(selectedPayment)]} Details
+                    {paymentMethods.find(p => p.id === selectedPayment)?.name} Details
                   </h3>
                   <div className="space-y-1 text-sm text-gray-600">
-                    {[
-                      ['Account: 0345-1234567', 'Title: RANA LEATHER\'S'],
-                      ['Account: 0321-7654321', 'Title: RANA LEATHER\'S'],
-                      ['Bank: Meezan Bank', 'Account: 1234-5678901-2'],
-                      ['Pay at delivery', 'Nationwide'],
-                    ][['easypaisa','jazzcash','bank','cod'].indexOf(selectedPayment)].map((detail, i) => (
+                    {paymentMethods.find(p => p.id === selectedPayment)?.details.map((detail, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
-                        <span>{detail}</span>
-                        {detail.includes('Account') && (
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(detail.split(': ')[1]);
-                              setCopied(true);
-                              setTimeout(() => setCopied(false), 2000);
-                            }}
-                            className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
-                          >
-                            <Copy size={14} />
-                            {copied ? 'Copied!' : 'Copy'}
-                          </button>
-                        )}
+                        <span>{detail.label}:</span>
+                        <span className="font-medium">{detail.value}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
-                    <AlertCircle size={14} className="inline mr-1" />
-                    Send confirmation to: info@ranaleathers.com
+                  {selectedPayment === 'easypaisa' && (
+                    <a
+                      href="https://easypaisa.com.pk/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-block bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition"
+                    >
+                      Pay with EasyPaisa →
+                    </a>
+                  )}
+                  {selectedPayment === 'jazzcash' && (
+                    <a
+                      href="https://jazzcash.com.pk/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-block bg-orange-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-600 transition"
+                    >
+                      Pay with JazzCash →
+                    </a>
+                  )}
+                  {selectedPayment === 'bank' && (
+                    <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                      <AlertCircle size={14} className="inline mr-1" />
+                      Send confirmation to: info@ranaleathers.com
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Credit/Debit Card Form */}
+              {showCardForm && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <h3 className="font-semibold text-[#1A0F0A] mb-3 text-sm">Card Details</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Card Number</label>
+                      <input
+                        type="text"
+                        name="cardNumber"
+                        value={cardData.cardNumber}
+                        onChange={handleCardInputChange}
+                        placeholder="1234 5678 9012 3456"
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                        maxLength={19}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Name on Card</label>
+                      <input
+                        type="text"
+                        name="cardName"
+                        value={cardData.cardName}
+                        onChange={handleCardInputChange}
+                        placeholder="John Doe"
+                        className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Expiry Month</label>
+                        <input
+                          type="text"
+                          name="expiryMonth"
+                          value={cardData.expiryMonth}
+                          onChange={handleCardInputChange}
+                          placeholder="MM"
+                          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                          maxLength={2}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Expiry Year</label>
+                        <input
+                          type="text"
+                          name="expiryYear"
+                          value={cardData.expiryYear}
+                          onChange={handleCardInputChange}
+                          placeholder="YY"
+                          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                          maxLength={2}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">CVC</label>
+                        <input
+                          type="text"
+                          name="cvc"
+                          value={cardData.cvc}
+                          onChange={handleCardInputChange}
+                          placeholder="123"
+                          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-[#D4AF37]"
+                          maxLength={4}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <Lock size={14} />
+                      <span>Your payment is secure and encrypted</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -481,7 +681,7 @@ export default function CheckoutPage() {
                 disabled={loading}
                 className="mt-6 w-full bg-gradient-to-r from-[#8B3A1A] to-[#1A0F0A] hover:from-[#6B2A10] hover:to-[#1A0F0A] text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 shadow-lg"
               >
-                {loading ? 'Processing...' : 'Place Order ✓'}
+                {loading ? 'Processing...' : `Place Order - Rs. ${total.toLocaleString()}`}
               </button>
             </div>
           )}
