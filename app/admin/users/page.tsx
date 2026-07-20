@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, User, Mail, Calendar, Shield, UserX, UserCheck } from 'lucide-react';
+import { Search, User, Mail, Calendar, Shield, UserX, UserCheck, Trash2 } from 'lucide-react';
 
 interface User {
   id: string;
@@ -15,12 +15,14 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/admin/users');
       if (response.ok) {
@@ -43,39 +45,46 @@ export default function AdminUsersPage() {
       });
       if (response.ok) {
         fetchUsers();
+        alert(`✅ User role updated to ${newRole}`);
+      } else {
+        alert('❌ Failed to update user role');
       }
     } catch (error) {
       console.error('Error updating user role:', error);
+      alert('❌ Something went wrong');
     }
   };
 
   const handleDelete = async (userId: string, userEmail: string) => {
-  // Prevent deleting admin
-  if (userEmail === 'admin@ranaleathers.com') {
-    alert('❌ Cannot delete the admin user!');
-    return;
-  }
-
-  if (!confirm(`Are you sure you want to delete this user?`)) return;
-  
-  try {
-    const response = await fetch(`/api/admin/users?userId=${userId}`, { 
-      method: 'DELETE' 
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      alert('✅ User deleted successfully!');
-      fetchUsers();
-    } else {
-      alert(data.error || '❌ Failed to delete user');
+    // Prevent deleting admin
+    if (userEmail === 'admin@ranaleathers.com') {
+      alert('❌ Cannot delete the admin user!');
+      return;
     }
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    alert('❌ Something went wrong');
-  }
-};
+
+    if (!confirm(`Are you sure you want to delete this user? This action cannot be undone.`)) return;
+    
+    setDeleting(userId);
+    try {
+      const response = await fetch(`/api/admin/users?userId=${userId}`, { 
+        method: 'DELETE' 
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert('✅ User deleted successfully!');
+        fetchUsers();
+      } else {
+        alert(data.error || '❌ Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('❌ Something went wrong');
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,7 +161,7 @@ export default function AdminUsersPage() {
                       <select
                         value={user.role || 'user'}
                         onChange={(e) => updateUserRole(user.id, e.target.value)}
-                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 ${
+                        className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer ${
                           user.role === 'admin' 
                             ? 'bg-yellow-100 text-yellow-700' 
                             : 'bg-gray-100 text-gray-700'
@@ -167,10 +176,16 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="py-3 px-4">
                       <button
-                        onClick={() => deleteUser(user.id)}
-                        className="text-red-500 hover:text-red-700 transition text-sm flex items-center gap-1"
+                        onClick={() => handleDelete(user.id, user.email)}
+                        disabled={deleting === user.id || user.email === 'admin@ranaleathers.com'}
+                        className={`flex items-center gap-1 text-sm transition ${
+                          user.email === 'admin@ranaleathers.com'
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-red-500 hover:text-red-700'
+                        }`}
                       >
-                        <UserX size={16} /> Delete
+                        <Trash2 size={16} />
+                        {deleting === user.id ? 'Deleting...' : 'Delete'}
                       </button>
                     </td>
                   </tr>
