@@ -63,10 +63,22 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // Prevent deleting admin user
+    const user = userCheck.rows[0];
+    if (user.email === 'admin@ranaleathers.com') {
+      return NextResponse.json(
+        { error: 'Cannot delete admin user' },
+        { status: 403 }
+      );
+    }
+
     // Delete user (cascade will handle related records)
     await query('DELETE FROM users WHERE id = $1', [userId]);
 
-    return NextResponse.json({ success: true, message: 'User deleted successfully' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'User deleted successfully' 
+    });
   } catch (error: any) {
     console.error('Error deleting user:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

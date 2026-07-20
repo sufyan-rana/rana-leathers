@@ -49,19 +49,33 @@ export default function AdminUsersPage() {
     }
   };
 
-  const deleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        fetchUsers();
-      }
-    } catch (error) {
-      console.error('Error deleting user:', error);
+  const handleDelete = async (userId: string, userEmail: string) => {
+  // Prevent deleting admin
+  if (userEmail === 'admin@ranaleathers.com') {
+    alert('❌ Cannot delete the admin user!');
+    return;
+  }
+
+  if (!confirm(`Are you sure you want to delete this user?`)) return;
+  
+  try {
+    const response = await fetch(`/api/admin/users?userId=${userId}`, { 
+      method: 'DELETE' 
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      alert('✅ User deleted successfully!');
+      fetchUsers();
+    } else {
+      alert(data.error || '❌ Failed to delete user');
     }
-  };
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    alert('❌ Something went wrong');
+  }
+};
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
