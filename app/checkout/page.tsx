@@ -17,7 +17,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Smartphone,
-  Landmark
+  Landmark,
+  Lock
 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -192,7 +193,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // Handle Card Payment with Stripe
+  // ✅ FIXED: Handle Card Payment with Stripe - Using window.location redirect
   const handleCardPayment = async () => {
     if (!cardData.cardNumber || !cardData.cardName || !cardData.expiryMonth || !cardData.expiryYear || !cardData.cvc) {
       alert('Please fill in all card details');
@@ -241,14 +242,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Initialize Stripe
-      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-      if (!stripe) {
-        alert('Stripe failed to load. Please try again.');
-        setLoading(false);
-        return;
-      }
-
       // Create Stripe checkout session
       const stripeResponse = await fetch('/api/payment/create-checkout', {
         method: 'POST',
@@ -263,12 +256,9 @@ export default function CheckoutPage() {
 
       const { sessionId } = await stripeResponse.json();
 
-      // Redirect to Stripe checkout
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-      if (error) {
-        alert('Payment failed: ' + error.message);
-        setLoading(false);
-      }
+      // ✅ FIXED: Redirect to Stripe checkout using window.location
+      // This avoids the redirectToCheckout method that doesn't exist in the latest Stripe SDK
+      window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
 
     } catch (error) {
       console.error('Payment error:', error);
