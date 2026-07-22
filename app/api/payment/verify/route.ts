@@ -1,9 +1,6 @@
 // app/api/payment/verify/route.ts
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { query } from '@/lib/db';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function GET(request: Request) {
   try {
@@ -16,6 +13,21 @@ export async function GET(request: Request) {
         { status: 400 }
       );
     }
+
+    // Check if Stripe is configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { 
+          error: 'Card payments are not configured. Please contact support.',
+          available: false 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Dynamically import Stripe
+    const Stripe = await import('stripe').then(mod => mod.default);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 

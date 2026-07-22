@@ -1,12 +1,24 @@
 // app/api/payment/create-checkout/route.ts
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: Request) {
   try {
     const { items, orderNumber, customerEmail, customerName } = await request.json();
+
+    // Check if Stripe is configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { 
+          error: 'Card payments are not available. Please use EasyPaisa, JazzCash, or Bank Transfer.',
+          available: false 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Dynamically import Stripe only when key exists
+    const Stripe = await import('stripe').then(mod => mod.default);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
     const lineItems = items.map((item: any) => ({
       price_data: {
@@ -24,8 +36,8 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout`,
+      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://rana-leathers.vercel.app'}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://rana-leathers.vercel.app'}/checkout`,
       customer_email: customerEmail,
       metadata: {
         orderNumber: orderNumber,
