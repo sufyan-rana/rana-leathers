@@ -78,7 +78,7 @@ export default function CheckoutPage() {
   const shipping = subtotal > 5000 ? 0 : 500;
   const total = subtotal + shipping;
 
-  // Payment Methods with direct links
+  // Payment Methods - Only EasyPaisa, JazzCash, Bank Transfer, COD
   const paymentMethods = [
     {
       id: 'easypaisa',
@@ -137,17 +137,6 @@ export default function CheckoutPage() {
       link: '#',
       linkText: 'Confirm COD Order',
       color: 'bg-yellow-600 hover:bg-yellow-700',
-    },
-    {
-      id: 'card',
-      name: 'Credit / Debit Card',
-      icon: <CreditCard className="text-purple-400" size={24} />,
-      description: 'Coming soon',
-      details: [],
-      link: '#',
-      linkText: 'Coming Soon',
-      color: 'bg-gray-400 cursor-not-allowed',
-      comingSoon: true,
     },
   ];
 
@@ -272,7 +261,7 @@ export default function CheckoutPage() {
             <p className="text-sm text-gray-600">
               <strong>Total Amount:</strong> Rs. {total.toLocaleString()}
             </p>
-            {selectedPayment !== 'cod' && selectedPayment !== 'card' && (
+            {selectedPayment !== 'cod' && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-700">
                   Please send payment confirmation to: <strong>info@ranaleathers.com</strong>
@@ -451,41 +440,27 @@ export default function CheckoutPage() {
                 {paymentMethods.map((method) => (
                   <button
                     key={method.id}
-                    onClick={() => {
-                      if (method.comingSoon) {
-                        alert('Card payments coming soon!');
-                        return;
-                      }
-                      setSelectedPayment(method.id);
-                    }}
-                    disabled={method.comingSoon}
+                    onClick={() => setSelectedPayment(method.id)}
                     className={`p-4 border-2 rounded-xl text-left transition-all duration-300 ${
-                      selectedPayment === method.id && !method.comingSoon
+                      selectedPayment === method.id
                         ? 'border-[#D4AF37] bg-[#D4AF37]/5 shadow-md'
-                        : method.comingSoon
-                        ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
                         : 'border-gray-200 hover:border-[#D4AF37]/50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       {method.icon}
                       <div>
-                        <p className={`font-medium text-sm ${method.comingSoon ? 'text-gray-400' : 'text-[#1A0F0A]'}`}>
-                          {method.name}
-                          {method.comingSoon && (
-                            <span className="ml-2 text-xs bg-gray-200 text-gray-500 px-2 py-0.5 rounded-full">Soon</span>
-                          )}
-                        </p>
+                        <p className="font-medium text-[#1A0F0A] text-sm">{method.name}</p>
                         <p className="text-xs text-gray-500">{method.description}</p>
                       </div>
-                      {selectedPayment === method.id && !method.comingSoon && <Check size={16} className="text-[#D4AF37] ml-auto" />}
+                      {selectedPayment === method.id && <Check size={16} className="text-[#D4AF37] ml-auto" />}
                     </div>
                   </button>
                 ))}
               </div>
 
               {/* Payment Details */}
-              {selectedPayment && !paymentMethods.find(p => p.id === selectedPayment)?.comingSoon && (
+              {selectedPayment && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
                   <h3 className="font-semibold text-[#1A0F0A] mb-2 text-sm">
                     {paymentMethods.find(p => p.id === selectedPayment)?.name} Details
