@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const token = cookies().get('auth-token')?.value;

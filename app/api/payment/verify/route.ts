@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -18,7 +20,7 @@ export async function GET(request: Request) {
     if (!process.env.STRIPE_SECRET_KEY) {
       return NextResponse.json(
         { 
-          error: 'Card payments are not configured. Please contact support.',
+          error: 'Card payments are not configured.',
           available: false 
         },
         { status: 400 }
