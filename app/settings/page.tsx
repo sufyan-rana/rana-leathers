@@ -135,20 +135,19 @@ export default function SettingsPage() {
     return null;
   }
 
-  // Menu items similar to Daraz
-  const menuItems = [
-    { icon: <User size={20} />, label: 'My Profile', href: '/profile', badge: 'Edit' },
-    { icon: <ShoppingBag size={20} />, label: 'My Orders', href: '/orders', badge: 'View All' },
-    { icon: <Heart size={20} />, label: 'Wishlist', href: '/wishlist', badge: `${0} items` },
-    { icon: <MapPin size={20} />, label: 'Address Book', href: '/addresses', badge: 'Manage' },
-    { icon: <CreditCard size={20} />, label: 'Payment Methods', href: '/payment-methods', badge: 'Add' },
-    { icon: <Bell size={20} />, label: 'Notifications', href: '/notifications', badge: 'On' },
-    { icon: <Globe size={20} />, label: 'Language', href: '/language', badge: 'English' },
-    { icon: <Moon size={20} />, label: 'Dark Mode', href: '#', badge: theme === 'dark' ? 'On' : 'Off' },
-    { icon: <Shield size={20} />, label: 'Privacy & Security', href: '/privacy', badge: '' },
-    { icon: <HelpCircle size={20} />, label: 'Help & Support', href: '/support', badge: '' },
-    { icon: <Share2 size={20} />, label: 'Share App', href: '#', badge: '' },
-  ];
+const menuItems = [
+  { icon: <User size={20} />, label: 'My Profile', href: '/profile' },
+  { icon: <ShoppingBag size={20} />, label: 'My Orders', href: '/orders' },
+  { icon: <Heart size={20} />, label: 'Wishlist', href: '/wishlist' },
+  { icon: <MapPin size={20} />, label: 'Address Book', href: '/addresses' },
+  { icon: <CreditCard size={20} />, label: 'Payment Methods', href: '/payment-methods' },
+  { icon: <Bell size={20} />, label: 'Notifications', href: '/notifications' },
+  { icon: <Globe size={20} />, label: 'Language', href: '/language' },
+  { icon: <Moon size={20} />, label: 'Dark Mode', href: '#', badge: theme === 'dark' ? 'On' : 'Off' },
+  { icon: <Shield size={20} />, label: 'Privacy & Security', href: '/privacy' },
+  { icon: <HelpCircle size={20} />, label: 'Help & Support', href: '/support' },
+  { icon: <Share2 size={20} />, label: 'Share App', href: '#', badge: '' },
+];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#1A0F0A] pb-20">
