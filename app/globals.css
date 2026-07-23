@@ -260,20 +260,12 @@ kbd {
   color: #B8A898;
 }
 
-.dark .text-\\[\\#1A0F0A\\] {
-  color: #F5EFE6;
-}
-
 .dark .bg-gray-100 {
   background-color: #2C1810;
 }
 
-.dark .hover\\:bg-gray-50:hover {
+.dark .hover-bg-gray-50:hover {
   background-color: #2C1810;
-}
-
-.dark .border-\\[\\#D4AF37\\]\\/10 {
-  border-color: rgba(212, 175, 55, 0.2);
 }
 
 .dark .shadow-sm {
@@ -282,4 +274,20 @@ kbd {
 
 .dark .shadow-lg {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
+
+.dark .border-gold {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.dark .text-gold {
+  color: #D4AF37;
+}
+
+.dark .text-white-custom {
+  color: #F5EFE6;
+}
+
+.dark .text-dark-custom {
+  color: #F5EFE6;
 }

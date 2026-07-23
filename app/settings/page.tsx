@@ -178,8 +178,8 @@ export default function SettingsPage() {
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#1A0F0A] dark:text-[#F5EFE6]">{user?.name || 'User'}</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
-            <span className="text-xs bg-[#D4AF37] text-[#1A0F0A] px-2 py-0.5 rounded-full mt-1 inline-block">
-              {user?.role || 'User'}
+            <span className="text-xs bg-[#D4AF37] text-[#1A0F0A] dark:text-[#1A0F0A] px-2 py-0.5 rounded-full mt-1 inline-block">
+            {user?.role || 'User'}
             </span>
           </div>
           <ChevronRight size={20} className="text-gray-400" />
