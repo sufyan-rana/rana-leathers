@@ -46,7 +46,7 @@ const COLORS = {
 };
 
 // ============================================================
-// NAVIGATION LINKS - Add or remove menu items here
+// NAVIGATION LINKS
 // ============================================================
 
 // Base navigation for all users
@@ -57,11 +57,9 @@ const baseNavigation = [
   { name: "Collections", href: "/collections" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
-   // Add Settings link for logged in users
-  ...(isAuthenticated ? [{ name: "Settings", href: "/settings" }] : []),
 ];
 
-// Admin navigation (will be conditionally added)
+// Admin navigation link
 const adminLink = { name: "Admin", href: "/admin", icon: Shield };
 
 export default function Navbar() {
@@ -75,10 +73,14 @@ export default function Navbar() {
 
   // Build navigation dynamically based on user role
   const navigation = [...baseNavigation];
-  
-  // ✅ FIXED: Check if user is admin (by email only)
-  // The 'role' property doesn't exist on the user object yet
-  if (user?.email === 'ranaleathers58@gmail.com') {
+
+  // Add Settings link for logged in users
+  if (isAuthenticated) {
+    navigation.push({ name: "Settings", href: "/settings" });
+  }
+
+  // Check if user is admin (by email)
+  if (user?.email === 'ranaleathers58@gmail.com' || user?.email === 'admin@ranaleathers.com') {
     navigation.push(adminLink);
   }
 
