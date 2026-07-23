@@ -459,67 +459,192 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* Payment Details */}
+              {/* Payment Details - Enhanced with Full Instructions */}
               {selectedPayment && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                  <h3 className="font-semibold text-[#1A0F0A] mb-2 text-sm">
-                    {paymentMethods.find(p => p.id === selectedPayment)?.name} Details
+                  <h3 className="font-semibold text-[#1A0F0A] mb-3 text-sm">
+                    {paymentMethods.find(p => p.id === selectedPayment)?.name} Payment Instructions
                   </h3>
-                  <div className="space-y-2 text-sm">
-                    {paymentMethods.find(p => p.id === selectedPayment)?.details.map((detail, i) => (
-                      <div key={i} className="flex items-center justify-between py-1 border-b border-gray-100 last:border-0">
-                        <span className="text-gray-600">{detail.label}:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-[#1A0F0A]">{detail.value}</span>
-                          {detail.label !== 'Payment' && detail.label !== 'Availability' && detail.label !== 'Extra Charges' && (
+                  
+                  {selectedPayment === 'easypaisa' && (
+                    <div className="space-y-3">
+                      <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-800 font-medium">📱 EasyPaisa Payment Steps:</p>
+                        <ol className="text-sm text-gray-700 mt-2 space-y-1 list-decimal list-inside">
+                          <li>Open your EasyPaisa mobile app</li>
+                          <li>Select "Send Money" or "Pay"</li>
+                          <li>Enter the account details below</li>
+                          <li>Enter the exact amount: <strong>Rs. {total.toLocaleString()}</strong></li>
+                          <li>Add your <strong>Order #</strong> as reference</li>
+                          <li>Click "Send" and confirm</li>
+                        </ol>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between py-2">
+                          <span className="text-gray-600">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-[#1A0F0A]">0345-1234567</span>
                             <button
-                              onClick={() => handleCopy(detail.value, detail.label)}
+                              onClick={() => handleCopy('0345-1234567', 'easypaisa')}
                               className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
                             >
                               <Copy size={14} />
-                              {copiedField === detail.label ? 'Copied!' : 'Copy'}
+                              {copiedField === 'easypaisa' ? 'Copied!' : 'Copy'}
                             </button>
-                          )}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Account Title:</span>
+                          <span className="font-medium text-[#1A0F0A]">RANA LEATHER'S</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Amount:</span>
+                          <span className="font-bold text-[#8B3A1A]">Rs. {total.toLocaleString()}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Payment Action Buttons */}
-                  <div className="mt-4">
-                    {selectedPayment === 'easypaisa' && (
                       <a
                         href="https://easypaisa.com.pk/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 transition w-full justify-center"
+                        className="inline-flex items-center justify-center gap-2 w-full bg-green-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-green-700 transition"
                       >
-                        Pay with EasyPaisa <ExternalLink size={16} />
+                        <Smartphone size={18} /> Open EasyPaisa Website
+                        <ExternalLink size={14} />
                       </a>
-                    )}
-                    {selectedPayment === 'jazzcash' && (
+                      <div className="text-xs text-gray-500 text-center">
+                        After payment, send confirmation to <strong>info@ranaleathers.com</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPayment === 'jazzcash' && (
+                    <div className="space-y-3">
+                      <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                        <p className="text-sm text-orange-800 font-medium">📱 JazzCash Payment Steps:</p>
+                        <ol className="text-sm text-gray-700 mt-2 space-y-1 list-decimal list-inside">
+                          <li>Open your JazzCash mobile app</li>
+                          <li>Select "Send Money" or "Pay"</li>
+                          <li>Enter the account details below</li>
+                          <li>Enter the exact amount: <strong>Rs. {total.toLocaleString()}</strong></li>
+                          <li>Add your <strong>Order #</strong> as reference</li>
+                          <li>Click "Send" and confirm</li>
+                        </ol>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between py-2">
+                          <span className="text-gray-600">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-[#1A0F0A]">0321-7654321</span>
+                            <button
+                              onClick={() => handleCopy('0321-7654321', 'jazzcash')}
+                              className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
+                            >
+                              <Copy size={14} />
+                              {copiedField === 'jazzcash' ? 'Copied!' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Account Title:</span>
+                          <span className="font-medium text-[#1A0F0A]">RANA LEATHER'S</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Amount:</span>
+                          <span className="font-bold text-[#8B3A1A]">Rs. {total.toLocaleString()}</span>
+                        </div>
+                      </div>
                       <a
                         href="https://jazzcash.com.pk/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-600 transition w-full justify-center"
+                        className="inline-flex items-center justify-center gap-2 w-full bg-orange-500 text-white px-4 py-3 rounded-lg text-sm hover:bg-orange-600 transition"
                       >
-                        Pay with JazzCash <ExternalLink size={16} />
+                        <Smartphone size={18} /> Open JazzCash Website
+                        <ExternalLink size={14} />
                       </a>
-                    )}
-                    {selectedPayment === 'bank' && (
+                      <div className="text-xs text-gray-500 text-center">
+                        After payment, send confirmation to <strong>info@ranaleathers.com</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedPayment === 'bank' && (
+                    <div className="space-y-3">
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-800 font-medium">🏦 Bank Transfer Instructions:</p>
+                        <ol className="text-sm text-gray-700 mt-2 space-y-1 list-decimal list-inside">
+                          <li>Open your banking app or visit your bank branch</li>
+                          <li>Select "Fund Transfer" or "IBFT"</li>
+                          <li>Enter the account details below</li>
+                          <li>Enter the exact amount: <strong>Rs. {total.toLocaleString()}</strong></li>
+                          <li>Add your <strong>Order #</strong> as reference</li>
+                          <li>Confirm and complete the transfer</li>
+                        </ol>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-gray-200">
+                        <div className="flex items-center justify-between py-2">
+                          <span className="text-gray-600">Bank:</span>
+                          <span className="font-medium text-[#1A0F0A]">Meezan Bank</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Account Title:</span>
+                          <span className="font-medium text-[#1A0F0A]">RANA LEATHER'S</span>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-[#1A0F0A]">1234-5678901-2</span>
+                            <button
+                              onClick={() => handleCopy('1234-5678901-2', 'bank')}
+                              className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
+                            >
+                              <Copy size={14} />
+                              {copiedField === 'bank' ? 'Copied!' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">IBAN:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm text-[#1A0F0A]">PK99MEZN0012345678901234</span>
+                            <button
+                              onClick={() => handleCopy('PK99MEZN0012345678901234', 'iban')}
+                              className="text-[#8B3A1A] hover:text-[#D4AF37] transition text-xs flex items-center gap-1"
+                            >
+                              <Copy size={14} />
+                              {copiedField === 'iban' ? 'Copied!' : 'Copy'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between py-2 border-t">
+                          <span className="text-gray-600">Amount:</span>
+                          <span className="font-bold text-[#8B3A1A]">Rs. {total.toLocaleString()}</span>
+                        </div>
+                      </div>
                       <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
                         <AlertCircle size={14} className="inline mr-1" />
                         After payment, send confirmation to: <strong>info@ranaleathers.com</strong>
                       </div>
-                    )}
-                    {selectedPayment === 'cod' && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 flex items-center gap-2">
-                        <Clock size={14} />
-                        Pay cash when your order arrives
+                    </div>
+                  )}
+
+                  {selectedPayment === 'cod' && (
+                    <div className="space-y-3">
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-800 font-medium">📦 Cash on Delivery:</p>
+                        <ul className="text-sm text-gray-700 mt-2 space-y-1 list-disc list-inside">
+                          <li>Pay with cash when your order arrives</li>
+                          <li>Available nationwide in Pakistan</li>
+                          <li>No extra charges for COD</li>
+                          <li>Please keep exact change ready</li>
+                        </ul>
                       </div>
-                    )}
-                  </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-white p-3 rounded-lg border border-gray-200">
+                        <Clock size={18} className="text-blue-600" />
+                        <span>Your order will be delivered within 2-3 business days</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Place Order Button */}
                   <button
