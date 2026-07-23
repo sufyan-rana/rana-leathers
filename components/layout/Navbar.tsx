@@ -57,6 +57,8 @@ const baseNavigation = [
   { name: "Collections", href: "/collections" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
+   // Add Settings link for logged in users
+  ...(isAuthenticated ? [{ name: "Settings", href: "/settings" }] : []),
 ];
 
 // Admin navigation (will be conditionally added)

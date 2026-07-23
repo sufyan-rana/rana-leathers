@@ -228,3 +228,58 @@ kbd {
   line-height: 20px;
   box-shadow: 0 1px 0 0 #e5e7eb;
 }
+
+/* Dark Mode Styles */
+.dark {
+  --bg-primary: #1A0F0A;
+  --bg-secondary: #2C1810;
+  --text-primary: #F5EFE6;
+  --text-secondary: #D4C5B0;
+  --border-color: #3A2A24;
+}
+
+.dark body {
+  background-color: #1A0F0A;
+  color: #F5EFE6;
+}
+
+.dark .bg-white {
+  background-color: #2C1810;
+}
+
+.dark .bg-gray-50 {
+  background-color: #1A0F0A;
+}
+
+.dark .border-gray-200 {
+  border-color: #3A2A24;
+}
+
+.dark .text-gray-500,
+.dark .text-gray-600 {
+  color: #B8A898;
+}
+
+.dark .text-[#1A0F0A] {
+  color: #F5EFE6;
+}
+
+.dark .bg-gray-100 {
+  background-color: #2C1810;
+}
+
+.dark .hover\\:bg-gray-50:hover {
+  background-color: #2C1810;
+}
+
+.dark .border-[#D4AF37]/10 {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+}
