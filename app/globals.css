@@ -260,7 +260,7 @@ kbd {
   color: #B8A898;
 }
 
-.dark .text-[#1A0F0A] {
+.dark .text-\\[\\#1A0F0A\\] {
   color: #F5EFE6;
 }
 
@@ -272,7 +272,7 @@ kbd {
   background-color: #2C1810;
 }
 
-.dark .border-[#D4AF37]/10 {
+.dark .border-\\[\\#D4AF37\\]\\/10 {
   border-color: rgba(212, 175, 55, 0.2);
 }
 
